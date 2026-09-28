@@ -5,6 +5,7 @@
 #   Deploy latest code:        sudo ./scripts/deploy.sh          (zero-downtime)
 #   Install/repair Caddy+TLS:  sudo ./scripts/deploy.sh caddy
 #   Fetch + render card art:   ./scripts/deploy.sh cards
+#   Fetch the promo video:     ./scripts/deploy.sh video
 #   Tail app logs:             ./scripts/deploy.sh logs
 #   Service status:            ./scripts/deploy.sh status
 #
@@ -98,6 +99,7 @@ provision_caddy() {
   fi
   command -v caddy >/dev/null || fail "Caddy did not install — see the apt output above."
   mkdir -p /etc/caddy
+  if grep -q "max_size 60MB" /etc/caddy/Caddyfile 2>/dev/null; then rm -f /etc/caddy/Caddyfile; fi
   if ! grep -q "$DOMAIN" /etc/caddy/Caddyfile 2>/dev/null; then
     log "Writing Caddyfile for ${DOMAIN}…"
     cat > /etc/caddy/Caddyfile <<CADDY
@@ -105,7 +107,7 @@ ${DOMAIN}, www.${DOMAIN} {
 	encode zstd gzip
 	# SendGrid inbound parse can post large multipart bodies (attachments)
 	request_body {
-		max_size 60MB
+		max_size 512MB
 	}
 	reverse_proxy 127.0.0.1:${PORT} {
 		transport http {
@@ -172,6 +174,41 @@ fetch_cards_pdf() {
   rm -f "$CARDS_PDF.part"; log "⚠ Google Drive did not return a PDF — is the file shared as “Anyone with the link”?"; return 1
 }
 
+# Promo video ("playtime commercial final.mp4" on Google Drive) → public/uploads/promo.mp4,
+# used by the Home hero and the first-visit intro. Idempotent.
+PROMO_DRIVE_ID="${PROMO_DRIVE_ID:-1o75itsQZhDbiTMjO9Milw1GmAwCoL1si}"
+PROMO_FILE="${PROMO_FILE:-$APP_DIR/public/uploads/promo.mp4}"
+
+fetch_promo_video() {
+  [ -f "$PROMO_FILE" ] && [ "$(stat -c %s "$PROMO_FILE")" -gt 1000000 ] && return 0
+  mkdir -p "$(dirname "$PROMO_FILE")"
+  log "Downloading the promo video from Google Drive…"
+  local url="https://drive.usercontent.google.com/download?id=${PROMO_DRIVE_ID}&export=download&confirm=t"
+  curl -fsSL -o "$PROMO_FILE.part" "$url" || { rm -f "$PROMO_FILE.part"; log "⚠ video download failed"; return 1; }
+  if head -c 512 "$PROMO_FILE.part" | grep -q '<html'; then
+    local uuid; uuid=$(grep -o 'name="uuid" value="[^"]*"' "$PROMO_FILE.part" | head -1 | sed 's/.*value="//;s/"//')
+    curl -fsSL -o "$PROMO_FILE.part" "${url}&uuid=${uuid}" || true
+  fi
+  if head -c 512 "$PROMO_FILE.part" | grep -q '<html'; then rm -f "$PROMO_FILE.part"; log "⚠ Google Drive did not return the video — is it shared as “Anyone with the link”?"; return 1; fi
+  mv "$PROMO_FILE.part" "$PROMO_FILE"; chmod 644 "$PROMO_FILE"
+  log "Promo video saved ($(du -h "$PROMO_FILE" | cut -f1))"
+}
+
+set_video_settings() {
+  # only fill INTRO_VIDEO_URL when it is unset, so an admin override sticks
+  [ -f "$PROMO_FILE" ] || return 0
+  cd "$APP_DIR"; load_env
+  node --experimental-strip-types - <<'JS' 2>/dev/null || true
+import "dotenv/config";
+import { PrismaClient } from "./src/generated/prisma/client.ts";
+import { PrismaPg } from "@prisma/adapter-pg";
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL ?? "" }) });
+const cur = await prisma.setting.findUnique({ where: { key: "INTRO_VIDEO_URL" } });
+if (!cur?.value) { await prisma.setting.upsert({ where: { key: "INTRO_VIDEO_URL" }, update: { value: "/uploads/promo.mp4" }, create: { key: "INTRO_VIDEO_URL", value: "/uploads/promo.mp4" } }); console.log("  INTRO_VIDEO_URL set to /uploads/promo.mp4"); }
+await prisma.$disconnect();
+JS
+}
+
 import_cards() {
   cd "$APP_DIR"; load_env
   fetch_cards_pdf || return 1
@@ -204,6 +241,7 @@ build_app() {
   npx prisma db push --accept-data-loss=false 2>/dev/null || npx prisma db push
   log "Seeding (admin, catalog, defaults — idempotent)…"
   npm run db:seed
+  fetch_promo_video && set_video_settings
   import_cards || log "⚠ card artwork not imported — the site falls back to text cards (run ./scripts/deploy.sh cards to retry)"
   log "Building (next build, heap $(build_heap_mb) MB)…"
   export NODE_OPTIONS="--max-old-space-size=$(build_heap_mb)"
@@ -269,6 +307,9 @@ case "$cmd" in
   cards)
     import_cards && log "Card artwork imported ✔ (already live — no restart needed)"
     ;;
+  video)
+    cd "$APP_DIR"; fetch_promo_video && set_video_settings && log "Promo video in place ✔ (already live — no restart needed)"
+    ;;
   caddy)
     [ "$(id -u)" -eq 0 ] || fail "caddy needs root (sudo)."
     provision_caddy
@@ -277,5 +318,5 @@ case "$cmd" in
     ;;
   logs) pm2 logs "$SERVICE" --lines 100 ;;
   status) pm2 status "$SERVICE" ;;
-  *) fail "Unknown command: $cmd (setup | deploy | cards | caddy | logs | status)" ;;
+  *) fail "Unknown command: $cmd (setup | deploy | cards | video | caddy | logs | status)" ;;
 esac

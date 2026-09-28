@@ -3,8 +3,9 @@ import Link from "next/link";
 import { RampStrip, ImageSlot, RarityFrame, SpiceMeter, Includes } from "@/components/ui";
 import TryARoll from "@/components/TryARoll";
 import AddToCart from "@/components/AddToCart";
+import HeroVideo from "@/components/HeroVideo";
 import { HOW_STEPS, RARITIES, HEAT_LEVELS, money } from "@/lib/content";
-import { activeProducts, sampleCards } from "@/lib/catalog";
+import { activeProducts, sampleCards, type PublicProduct } from "@/lib/catalog";
 import { buildMetadata, jsonLdFor } from "@/lib/seo";
 import { getSettings, flag } from "@/lib/settings";
 import { isAgeVerified } from "@/lib/auth";
@@ -20,38 +21,39 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Home() {
   const [products, expansions, s, ageOk, jsonLd, samples] = await Promise.all([
     activeProducts("set"), activeProducts("expansion"),
-    getSettings(["DISCREET_PACKAGING"]), isAgeVerified(), jsonLdFor("/"), sampleCards(),
+    getSettings(["DISCREET_PACKAGING", "INTRO_VIDEO_URL", "INTRO_VIDEO_POSTER", "HERO_VIDEO_URL", "HERO_VIDEO_ENABLED", "HERO_VIDEO_AUTOPLAY"]), isAgeVerified(), jsonLdFor("/"), sampleCards(),
   ]);
   const base = products.find((p) => p.slug === "base");
   const basePrice = base ? money(base.priceCents) : "$35";
   const discreet = flag(s.DISCREET_PACKAGING);
+  const heroVideo = flag(s.HERO_VIDEO_ENABLED, true) ? (s.HERO_VIDEO_URL || s.INTRO_VIDEO_URL) : "";
 
   return (
     <>
       {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
 
       {/* 3. Hero */}
-      <section id="top" className="wrap grid g-420" style={{ paddingBlock: "clamp(48px, 8vw, 104px) clamp(56px, 8vw, 96px)", gap: "clamp(32px, 5vw, 72px)", alignItems: "center" }} data-screen-label="Hero">
-        <div className="stack gap-28">
+      <section id="top" className={`wrap hero${heroVideo ? "" : " hero--photo"}`} style={{ paddingBlock: "clamp(48px, 8vw, 104px) clamp(56px, 8vw, 96px)" }} data-screen-label="Hero">
+        <div className="hero__head">
           <div className="eyebrow">A card game for couples · 18+</div>
-          <h1 className="t-hero">Roll the die.<br /><span className="hl">Raise the heat.</span></h1>
+          <h1 className={`t-hero${heroVideo ? " t-hero--video" : ""}`}>Roll the die.<br /><span className="hl">Raise the heat.</span></h1>
           <p className="t-lead" style={{ maxWidth: 520 }}>72 cards, one 12-sided die, and a better night than the one you were planning. Written by a practicing sex therapist to be easy to say yes to — and just as easy to say no.</p>
-          <div className="row">
-            {base ? <AddToCart product={base} label={`Buy the base set — ${basePrice}`} /> : <Link className="btn" href="/shop">Buy the base set — {basePrice}</Link>}
-            <a className="btn btn--outline" href="#how">See how it works</a>
-          </div>
-          <div className="row" style={{ gap: 24, borderTop: "2px solid var(--rule)", paddingTop: 20, alignItems: "flex-start" }}>
-            {[["72", "Cards"], ["d12", "One die"], ["7", "Categories"], ["5", "Heat levels"]].map(([v, l]) => (
-              <div key={l} className="stack" style={{ gap: 4 }}>
-                <div className="num">{v}</div>
-                <div className="label">{l}</div>
-              </div>
-            ))}
-          </div>
+          {!heroVideo && <HeroCta base={base} basePrice={basePrice} />}
         </div>
-        <div className="min0" style={{ position: "relative" }}>
-          <ImageSlot src={ageOk ? base?.imageUrl && base.imageSlot === "site-hero" ? base.imageUrl : null : null} alt="A couple with the Play Time deck on the bed" hint="Hero · suggestive, not explicit · couple + deck on the bed · 1600 × 2000 px" aspect="4 / 5" />
-          <RampStrip h={10} />
+        <div className="hero__media">
+          {heroVideo ? (
+            <>
+              <HeroVideo src={heroVideo} poster={s.INTRO_VIDEO_POSTER || undefined} autoplay={flag(s.HERO_VIDEO_AUTOPLAY, true)} />
+              <RampStrip h={10} />
+              <div className="label" style={{ marginTop: 14 }}>Watch the trailer · sound on with one tap</div>
+              <div className="hero__cta"><HeroCta base={base} basePrice={basePrice} /></div>
+            </>
+          ) : (
+            <>
+              <ImageSlot src={ageOk ? base?.imageUrl && base.imageSlot === "site-hero" ? base.imageUrl : null : null} alt="A couple with the Play Time deck on the bed" hint="Hero · suggestive, not explicit · couple + deck on the bed · 1600 × 2000 px" aspect="4 / 5" />
+              <RampStrip h={10} />
+            </>
+          )}
         </div>
       </section>
 
@@ -188,6 +190,25 @@ export default async function Home() {
           </div>
         </div>
       </section>
+    </>
+  );
+}
+
+function HeroCta({ base, basePrice }: { base: PublicProduct | undefined; basePrice: string }) {
+  return (
+    <>
+      <div className="row">
+        {base ? <AddToCart product={base} label={`Buy the base set — ${basePrice}`} /> : <Link className="btn" href="/shop">Buy the base set — {basePrice}</Link>}
+        <a className="btn btn--outline" href="#how">See how it works</a>
+      </div>
+      <div className="row" style={{ gap: 24, borderTop: "2px solid var(--rule)", paddingTop: 20, alignItems: "flex-start" }}>
+        {[["72", "Cards"], ["d12", "One die"], ["7", "Categories"], ["5", "Heat levels"]].map(([v, l]) => (
+          <div key={l} className="stack" style={{ gap: 4 }}>
+            <div className="num">{v}</div>
+            <div className="label">{l}</div>
+          </div>
+        ))}
+      </div>
     </>
   );
 }
