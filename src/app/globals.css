@@ -510,3 +510,21 @@ select.input { appearance: none; }
 /* ── Play kit row: one product centred under the three sets ── */
 .kitrow { display: flex; justify-content: center; margin-top: 32px; }
 .prod--kit { width: min(100%, 420px); }
+
+/* ── Share menu (header) ── */
+.share { position: relative; display: inline-flex; }
+.share__btn { display: inline-flex; align-items: center; gap: 8px; background: transparent; border: 2px solid var(--rule); color: var(--text-muted); padding: 8px 12px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer; transition: color var(--t), border-color var(--t); }
+.share__btn:hover, .share__btn[aria-expanded="true"] { color: var(--text-strong); border-color: var(--text); }
+.share--compact .share__btn { padding: 8px 10px; }
+.share--compact .share__label { display: none; }
+.share__menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; min-width: 200px; background: var(--ink); border: 2px solid var(--rule); display: flex; flex-direction: column; }
+.share__menu a, .share__menu button { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: transparent; border: 0; border-bottom: 1px solid var(--rule); color: var(--text); font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; text-align: left; cursor: pointer; width: 100%; }
+.share__menu a:last-child, .share__menu button:last-child { border-bottom: 0; }
+.share__menu a:hover, .share__menu button:hover { background: var(--surface); color: var(--highlight); }
+.share__menu svg { flex: none; }
+@media (max-width: 900px) { .share__menu { position: fixed; left: var(--gutter); right: var(--gutter); top: calc(var(--header-h) + 8px); } }
+@media (max-width: 900px) {
+  .hdr__in > .row { flex-wrap: nowrap; gap: 8px; }
+  .hdr .wordmark { white-space: nowrap; font-size: clamp(16px, 4.6vw, 22px); }
+  .share--compact .share__btn { padding: 8px 9px; }
+}

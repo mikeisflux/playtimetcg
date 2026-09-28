@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cart, useCart } from "@/lib/cartStore";
+import ShareMenu from "./ShareMenu";
 
 const LINKS = [
   { href: "/how-to-play", label: "How to play" },
@@ -36,9 +37,11 @@ export default function Header({ user }: { user: { name: string; isAdmin: boolea
               {user ? "Account" : "Sign in"}
             </Link>
             {user?.isAdmin && <Link href="/admin">Admin</Link>}
+            <ShareMenu />
             <CartButton count={count} />
           </nav>
           <div className="row" style={{ gap: 10 }}>
+            <span className="hdr__share-mobile" style={{ display: "contents" }}><ShareMenu compact /></span>
             <span className="menubtn-slot" style={{ display: "contents" }}>
               <button className="menubtn" onClick={() => setMenu((m) => !m)} aria-expanded={menu} aria-controls="mobile-menu">
                 {menu ? "Close" : "Menu"}
@@ -58,7 +61,7 @@ export default function Header({ user }: { user: { name: string; isAdmin: boolea
           <Link href="/cart">Cart ({count})</Link>
         </div>
       )}
-      <style>{`@media (min-width: 901px) { .hdr__cart-mobile { display: none !important; } }`}</style>
+      <style>{`@media (min-width: 901px) { .hdr__cart-mobile, .hdr__share-mobile { display: none !important; } }`}</style>
     </>
   );
 }

@@ -24,7 +24,7 @@ export const PRIVATE_PREFIXES = ["/admin", "/api", "/account", "/checkout", "/ca
 export const isPrivatePath = (path: string) => PRIVATE_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
 
 const DEFAULT_DESCRIPTION = "72 cards, one 12-sided die, and a better night than the one you were planning. An adult card game for couples, written by a practicing sex therapist.";
-const SITE_KEYS = ["SITE_URL", "SITE_NAME", "SEO_TITLE_TEMPLATE", "SEO_DEFAULT_DESCRIPTION", "SEO_DEFAULT_KEYWORDS", "SEO_OG_IMAGE", "SEO_TWITTER_HANDLE", "GOOGLE_SITE_VERIFICATION", "BING_SITE_VERIFICATION"];
+const SITE_KEYS = ["SITE_URL", "SITE_NAME", "SEO_TITLE_TEMPLATE", "SEO_DEFAULT_DESCRIPTION", "SEO_DEFAULT_KEYWORDS", "SEO_OG_IMAGE", "SEO_TWITTER_HANDLE", "GOOGLE_SITE_VERIFICATION", "BING_SITE_VERIFICATION", "FB_APP_ID"];
 
 export const stripSlash = (u: string) => u.replace(/\/$/, "");
 export const absUrl = (base: string, u: string) => (/^https?:\/\//i.test(u) ? u : `${stripSlash(base)}${u.startsWith("/") ? "" : "/"}${u}`);
@@ -82,7 +82,7 @@ export async function buildMetadata(path: string, d: SeoDefaults): Promise<Metad
       images: [image],
       ...(s.SEO_TWITTER_HANDLE ? { site: s.SEO_TWITTER_HANDLE, creator: s.SEO_TWITTER_HANDLE } : {}),
     },
-    other: { rating: "adult" },
+    other: { rating: "adult", ...(s.FB_APP_ID ? { "fb:app_id": s.FB_APP_ID } : {}) },
     ...(s.GOOGLE_SITE_VERIFICATION || s.BING_SITE_VERIFICATION ? {
       verification: {
         ...(s.GOOGLE_SITE_VERIFICATION ? { google: s.GOOGLE_SITE_VERIFICATION } : {}),

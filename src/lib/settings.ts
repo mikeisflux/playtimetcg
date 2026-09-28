@@ -66,6 +66,7 @@ export const SETTING_KEYS: SettingDef[] = [
   { key: "SEO_DEFAULT_KEYWORDS", label: "Default keywords (comma separated)", group: "SEO & analytics" },
   { key: "SEO_OG_IMAGE", label: "Default Open Graph image", group: "SEO & analytics", hint: "/og.png (dark wordmark + ramp — safe everywhere)" },
   { key: "SEO_TWITTER_HANDLE", label: "Twitter / X handle", group: "SEO & analytics", hint: "@playtimetcg" },
+  { key: "FB_APP_ID", label: "Facebook app ID (optional)", group: "SEO & analytics", hint: "adds fb:app_id to share previews; leave blank if you don’t have one" },
   { key: "SEO_ROBOTS_EXTRA", label: "Extra robots.txt disallow paths", group: "SEO & analytics", hint: "comma separated" },
   { key: "SEO_ORG_JSONLD", label: "Organization JSON-LD (raw)", group: "SEO & analytics" },
   { key: "GA_MEASUREMENT_ID", label: "Google Analytics measurement ID", group: "SEO & analytics", hint: "G-XXXXXXX" },
