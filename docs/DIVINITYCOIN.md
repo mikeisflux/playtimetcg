@@ -11,13 +11,13 @@ hard-coded.
 
 | Setting | Purpose |
 |---|---|
-| `DIVINITYCOIN_API_URL` | Base URL of the DivinityCoin API (`https://divinitycoin.com`, or the VPN address `http://10.10.0.1:3001` for the internal API). |
+| `DIVINITYCOIN_API_URL` | Base URL of the DivinityCoin API, `https://divinitycoin.com`. The partner API is public HTTPS; no VPN or IP allow-list is needed. |
 | `DIVINITYCOIN_API_KEY` | Partner key (`sk_…`), sent in the header named by `DIVINITYCOIN_AUTH_HEADER` on every server-to-server call. |
-| `DIVINITYCOIN_AUTH_HEADER` | `X-API-Key` for the public partner API (default); `X-Internal-Key` for the VPN service. |
+| `DIVINITYCOIN_AUTH_HEADER` | `Authorization` (default; sends `Bearer <key>`). `X-Internal-Key` for the VPN service. |
 | `DIVINITYCOIN_PUBLIC_KEY` | Publishable key, if DivinityCoin issues one alongside the API key. Stored for the hosted checkout; not required by the server-to-server calls. |
 | `DIVINITYCOIN_PARTNER_SLUG` | Our partner id on DivinityCoin (`playtimetcg`). Sent as `X-Partner`. |
 | `DIVINITYCOIN_WEBHOOK_SECRET` | HMAC-SHA256 secret DivinityCoin signs webhook deliveries with. |
-| `DIVINITYCOIN_INTERNAL_PATH` | Where the internal API is mounted: `/api/internal` on the public domain (default), `/internal` on the VPN service. |
+| `DIVINITYCOIN_INTERNAL_PATH` | The partner endpoint, default `/internal`. Every call is `POST <prefix>?action=<name>` with a JSON body. |
 | `DIVINITYCOIN_CHECKOUT_PATH` | Hosted checkout endpoint path (default `/api/partner/checkout`). |
 | `DIVINITYCOIN_ALLOW_CREDITS` | Let shoppers pay with a redeemed credit balance. |
 | `DIVINITYCOIN_TEST_MODE` | Replaces the redirect with a local simulator that posts signed events to our own webhook. |
@@ -85,11 +85,11 @@ All `POST`, JSON, with `X-Internal-Key` and `X-Partner`.
 
 | Endpoint | Body | Used for |
 |---|---|---|
-| `<internal path>/balance` | `{ platformUserId }` | Checkout "Pay with credits", Account → Credits |
-| `<internal path>/validate` | `{ code, platformUserId, ipAddress, userAgent }` | Account → Credits → Redeem a code |
-| `<internal path>/hold` | `{ platformUserId, amount, pledgeId: <orderId>, projectId: "playtimetcg-order", expiresAt }` | Pay with credits (step 1) |
-| `<internal path>/capture` | `{ pledgeId: <orderId> }` | Pay with credits (step 2) |
-| `<internal path>/release` | `{ pledgeId: <orderId> }` | Rollback when capture fails |
+| `POST /internal?action=balance` | `{ platformUserId }` | Checkout "Pay with credits", Account → Credits |
+| `POST /internal?action=validate` | `{ code, platformUserId, ipAddress, userAgent }` | Account → Credits → Redeem a code |
+| `POST /internal?action=hold` | `{ platformUserId, amount, pledgeId: <orderId>, projectId: "playtimetcg-order", expiresAt }` | Pay with credits (step 1) |
+| `POST /internal?action=capture` | `{ pledgeId: <orderId> }` | Pay with credits (step 2) |
+| `POST /internal?action=release` | `{ pledgeId: <orderId> }` | Rollback when capture fails |
 | `GET /internal/health` | — | Admin dashboard / Settings → Test |
 
 ### Hosted checkout

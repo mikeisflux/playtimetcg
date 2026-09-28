@@ -37,14 +37,14 @@ export const SETTING_KEYS: SettingDef[] = [
   { key: "MAINTENANCE_MESSAGE", label: "Maintenance message", group: "Site" },
 
   // DivinityCoin
-  { key: "DIVINITYCOIN_API_URL", label: "DivinityCoin API base URL", group: "DivinityCoin", hint: "https://divinitycoin.com (default) — or the VPN address http://10.10.0.1:3001 if this server is on DivinityCoin's VPN" },
+  { key: "DIVINITYCOIN_API_URL", label: "DivinityCoin API base URL", group: "DivinityCoin", hint: "https://divinitycoin.com (default) — public HTTPS, no VPN or allow-list needed" },
   { key: "DIVINITYCOIN_API_KEY", label: "DivinityCoin partner API key", group: "DivinityCoin", secret: true, hint: "sk_… from the partner page; sent in the auth header below on every server-to-server call" },
-  { key: "DIVINITYCOIN_AUTH_HEADER", label: "API key header name", group: "DivinityCoin", hint: "X-API-Key (public partner API, default) — X-Internal-Key on the VPN service" },
+  { key: "DIVINITYCOIN_AUTH_HEADER", label: "API key header name", group: "DivinityCoin", hint: "Authorization (sends \"Bearer <key>\", default) — X-Internal-Key on the VPN service" },
   { key: "DIVINITYCOIN_PUBLIC_KEY", label: "DivinityCoin public (publishable) key", group: "DivinityCoin", hint: "if DivinityCoin issues one — identifies the partner in hosted checkout" },
   { key: "DIVINITYCOIN_PARTNER_SLUG", label: "Partner slug registered on DivinityCoin", group: "DivinityCoin", hint: "playtimetcg" },
   { key: "DIVINITYCOIN_WEBHOOK_SECRET", label: "DivinityCoin webhook signing secret", group: "DivinityCoin", secret: true, hint: "HMAC-SHA256 secret DivinityCoin uses to sign webhook deliveries" },
   { key: "DIVINITYCOIN_WEBHOOK_URL", label: "Webhook URL (paste into DivinityCoin partner settings)", group: "DivinityCoin", readonly: true, hint: "https://playtimetcg.com/api/webhooks/divinitycoin" },
-  { key: "DIVINITYCOIN_INTERNAL_PATH", label: "Internal API path prefix", group: "DivinityCoin", hint: "/api/internal on https://divinitycoin.com (default); /internal on the VPN service" },
+  { key: "DIVINITYCOIN_INTERNAL_PATH", label: "Internal API path prefix", group: "DivinityCoin", hint: "/internal (default). Calls are POST <prefix>?action=validate|balance|hold|release|capture" },
   { key: "DIVINITYCOIN_CHECKOUT_PATH", label: "Hosted checkout path", group: "DivinityCoin", hint: "/api/partner/checkout (default)" },
   { key: "DIVINITYCOIN_ALLOW_CREDITS", label: "Allow paying with DivinityCoin credit balance", group: "DivinityCoin", hint: "true / false" },
   { key: "DIVINITYCOIN_TEST_MODE", label: "Test mode", group: "DivinityCoin", hint: "true — orders can be marked paid from /admin without a real webhook" },

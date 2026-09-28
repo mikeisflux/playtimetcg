@@ -60,16 +60,19 @@ async function config() {
     webhookSecret: s.DIVINITYCOIN_WEBHOOK_SECRET,
     partner: s.DIVINITYCOIN_PARTNER_SLUG || "playtimetcg",
     checkoutPath: s.DIVINITYCOIN_CHECKOUT_PATH || "/api/partner/checkout",
-    /* On the public domain the internal API is mounted under /api/internal;
-       on the VPN service it is at the root (/internal). */
-    internalPath: (s.DIVINITYCOIN_INTERNAL_PATH || "/api/internal").replace(/\/$/, ""),
-    /* DivinityCoin's public partner API authenticates with X-API-Key; the VPN
-       internal service uses X-Internal-Key. */
-    authHeader: s.DIVINITYCOIN_AUTH_HEADER || "X-API-Key",
+    /* The public partner API is a single endpoint, POST /internal?action=<name>,
+       authenticated with "Authorization: Bearer <key>" (no VPN or allow-list). */
+    internalPath: (s.DIVINITYCOIN_INTERNAL_PATH || "/internal").replace(/\/$/, ""),
+    authHeader: s.DIVINITYCOIN_AUTH_HEADER || "Authorization",
     testMode: flag(s.DIVINITYCOIN_TEST_MODE),
     allowCredits: flag(s.DIVINITYCOIN_ALLOW_CREDITS, true),
     webhookUrl: `${(s.SITE_URL || "https://playtimetcg.com").replace(/\/$/, "")}/api/webhooks/divinitycoin`,
   };
+}
+
+function authHeaders(c: { authHeader: string; apiKey: string; partner: string }): Record<string, string> {
+  const value = /^authorization$/i.test(c.authHeader) ? `Bearer ${c.apiKey}` : c.apiKey;
+  return { [c.authHeader]: value, "X-Partner": c.partner };
 }
 
 export async function divinityConfigured(): Promise<boolean> {
@@ -87,11 +90,7 @@ class DivinityCoinClient {
     if (!c.apiKey) throw new Error("DivinityCoin is not configured (Admin → Settings → DivinityCoin).");
     const res = await fetch(`${c.baseUrl}${endpoint}`, {
       method,
-      headers: {
-        "Content-Type": "application/json",
-        [c.authHeader]: c.apiKey,
-        "X-Partner": c.partner,
-      },
+      headers: { "Content-Type": "application/json", ...authHeaders(c) },
       body: method === "GET" ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(15_000),
     });
@@ -104,46 +103,54 @@ class DivinityCoinClient {
   }
 
   /* ─── credits (spec §9.2) ─── */
-  private async internal<T>(endpoint: string, body: object): Promise<T> {
+  private async internal<T>(action: string, body: object): Promise<T> {
     const c = await config();
-    return this.request<T>(`${c.internalPath}${endpoint}`, body);
+    return this.request<T>(`${c.internalPath}?action=${encodeURIComponent(action)}`, body);
   }
   getBalance(userId: string) {
-    return this.internal<CreditBalance>("/balance", { platformUserId: userId });
+    return this.internal<CreditBalance>("balance", { platformUserId: userId });
   }
   redeemCode(code: string, userId: string, ipAddress: string, userAgent?: string) {
-    return this.internal<RedeemResult>("/validate", {
+    return this.internal<RedeemResult>("validate", {
       code: code.toUpperCase().replace(/-/g, ""), platformUserId: userId, ipAddress, userAgent,
     });
   }
   placeHold(userId: string, amount: number, orderId: string, expiresAt?: Date) {
     /* pledgeId/projectId keep the CreatorCredits field names; for a store the
        "pledge" is the order and the "project" is this partner. */
-    return this.internal<HoldResult>("/hold", {
+    return this.internal<HoldResult>("hold", {
       platformUserId: userId, amount, pledgeId: orderId, projectId: "playtimetcg-order",
       expiresAt: expiresAt?.toISOString(),
     });
   }
   releaseHold(orderId: string) {
-    return this.internal<SimpleResult>("/release", { pledgeId: orderId });
+    return this.internal<SimpleResult>("release", { pledgeId: orderId });
   }
   captureHold(orderId: string) {
-    return this.internal<SimpleResult>("/capture", { pledgeId: orderId });
+    return this.internal<SimpleResult>("capture", { pledgeId: orderId });
   }
   async healthCheck(): Promise<{ ok: boolean; detail: string }> {
     try {
       const c = await config();
       if (!c.apiKey) return { ok: false, detail: "API key not set" };
-      const url = `${c.baseUrl}${c.internalPath}/health`;
-      const res = await fetch(url, { headers: { [c.authHeader]: c.apiKey, "X-Partner": c.partner }, signal: AbortSignal.timeout(5000) });
-      const body = (await res.text().catch(() => "")).replace(/\s+/g, " ").trim().slice(0, 300);
-      const server = res.headers.get("server") || "unknown";
-      const ctype = res.headers.get("content-type") || "";
-      if (!res.ok) {
-        console.error(`[divinitycoin] GET ${url} -> HTTP ${res.status} (server: ${server}; content-type: ${ctype}; partner: ${c.partner}; key: ${c.apiKey.slice(0, 4)}…${c.apiKey.slice(-4)}) body: ${body}`);
-        return { ok: false, detail: `HTTP ${res.status} from ${server}${body ? `: ${body}` : ""}` };
+      const url = `${c.baseUrl}${c.internalPath}?action=health`;
+      const attempt = async (method: "GET" | "POST") => {
+        const res = await fetch(url, {
+          method, headers: { "Content-Type": "application/json", ...authHeaders(c) },
+          body: method === "POST" ? "{}" : undefined, signal: AbortSignal.timeout(5000),
+        });
+        const body = (await res.text().catch(() => "")).replace(/\s+/g, " ").trim().slice(0, 300);
+        return { res, body, method };
+      };
+      let r = await attempt("GET");
+      if (r.res.status === 404 || r.res.status === 405) r = await attempt("POST");
+      const server = r.res.headers.get("server") || "unknown";
+      const ctype = r.res.headers.get("content-type") || "";
+      if (!r.res.ok) {
+        console.error(`[divinitycoin] ${r.method} ${url} -> HTTP ${r.res.status} (server: ${server}; content-type: ${ctype}; partner: ${c.partner}; key: ${c.apiKey.slice(0, 4)}…${c.apiKey.slice(-4)}) body: ${r.body}`);
+        return { ok: false, detail: `HTTP ${r.res.status} from ${server}${r.body ? `: ${r.body}` : ""}` };
       }
-      return { ok: true, detail: body };
+      return { ok: true, detail: r.body };
     } catch (err) { return { ok: false, detail: String(err) }; }
   }
 
