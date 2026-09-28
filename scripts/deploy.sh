@@ -4,6 +4,7 @@
 #   First-time server setup:   sudo ./scripts/deploy.sh setup
 #   Deploy latest code:        sudo ./scripts/deploy.sh          (zero-downtime)
 #   Install/repair Caddy+TLS:  sudo ./scripts/deploy.sh caddy
+#   Fetch + render card art:   ./scripts/deploy.sh cards
 #   Tail app logs:             ./scripts/deploy.sh logs
 #   Service status:            ./scripts/deploy.sh status
 #
@@ -146,6 +147,38 @@ build_heap_mb() {
   echo "$heap"
 }
 
+# Card artwork source. The print PDF lives on Google Drive (shared link);
+# the server can fetch it directly, this sandboxless path is what the
+# `cards` subcommand and every deploy use. Override with CARDS_PDF_URL or
+# CARDS_DRIVE_ID, or drop the file at docs/Play Time Cards Print.pdf.
+CARDS_DRIVE_ID="${CARDS_DRIVE_ID:-1Mdsskz4jE-lmqdbANsJGY7dUotfkjDrq}"
+CARDS_PDF="${CARDS_PDF:-$APP_DIR/private-assets/cards-print.pdf}"
+
+fetch_cards_pdf() {
+  if [ -f "$APP_DIR/docs/Play Time Cards Print.pdf" ]; then CARDS_PDF="$APP_DIR/docs/Play Time Cards Print.pdf"; return 0; fi
+  [ -f "$CARDS_PDF" ] && [ "$(stat -c %s "$CARDS_PDF")" -gt 1000000 ] && return 0
+  mkdir -p "$(dirname "$CARDS_PDF")"
+  local url="${CARDS_PDF_URL:-https://drive.usercontent.google.com/download?id=${CARDS_DRIVE_ID}&export=download&confirm=t}"
+  log "Downloading the cards PDF from Google Drive…"
+  curl -fsSL -o "$CARDS_PDF.part" "$url" || { log "⚠ download failed"; rm -f "$CARDS_PDF.part"; return 1; }
+  if ! head -c 5 "$CARDS_PDF.part" | grep -q '%PDF'; then
+    # large files get an interstitial "virus scan" page: follow its form
+    local uuid; uuid=$(grep -o 'name="uuid" value="[^"]*"' "$CARDS_PDF.part" | head -1 | sed 's/.*value="//;s/"//')
+    curl -fsSL -o "$CARDS_PDF.part" "https://drive.usercontent.google.com/download?id=${CARDS_DRIVE_ID}&export=download&confirm=t&uuid=${uuid}" || true
+  fi
+  if head -c 5 "$CARDS_PDF.part" | grep -q '%PDF'; then
+    mv "$CARDS_PDF.part" "$CARDS_PDF"; log "Cards PDF saved to $CARDS_PDF ($(du -h "$CARDS_PDF" | cut -f1))"; return 0
+  fi
+  rm -f "$CARDS_PDF.part"; log "⚠ Google Drive did not return a PDF — is the file shared as “Anyone with the link”?"; return 1
+}
+
+import_cards() {
+  cd "$APP_DIR"; load_env
+  fetch_cards_pdf || return 1
+  log "Rendering card artwork from $(basename "$CARDS_PDF")…"
+  npm run cards:import -- "$CARDS_PDF"
+}
+
 pull_code() {
   cd "$APP_DIR"
   log "Pulling latest ${BRANCH}…"
@@ -171,10 +204,7 @@ build_app() {
   npx prisma db push --accept-data-loss=false 2>/dev/null || npx prisma db push
   log "Seeding (admin, catalog, defaults — idempotent)…"
   npm run db:seed
-  if [ -f "docs/Play Time Cards Print.pdf" ]; then
-    log "Rendering card artwork from docs/Play Time Cards Print.pdf…"
-    npm run cards:import || log "⚠ card artwork import failed — the game falls back to text cards"
-  fi
+  import_cards || log "⚠ card artwork not imported — the site falls back to text cards (run ./scripts/deploy.sh cards to retry)"
   log "Building (next build, heap $(build_heap_mb) MB)…"
   export NODE_OPTIONS="--max-old-space-size=$(build_heap_mb)"
   NEXT_PUBLIC_PT_BUILD="$(date -u +%Y-%m-%d).$(git rev-parse --short=10 HEAD 2>/dev/null || date +%s)"
@@ -236,6 +266,9 @@ case "$cmd" in
     provision_caddy
     log "Deployed $(git rev-parse --short HEAD) ✔"
     ;;
+  cards)
+    import_cards && log "Card artwork imported ✔ (already live — no restart needed)"
+    ;;
   caddy)
     [ "$(id -u)" -eq 0 ] || fail "caddy needs root (sudo)."
     provision_caddy
@@ -244,5 +277,5 @@ case "$cmd" in
     ;;
   logs) pm2 logs "$SERVICE" --lines 100 ;;
   status) pm2 status "$SERVICE" ;;
-  *) fail "Unknown command: $cmd (setup | deploy | caddy | logs | status)" ;;
+  *) fail "Unknown command: $cmd (setup | deploy | cards | caddy | logs | status)" ;;
 esac

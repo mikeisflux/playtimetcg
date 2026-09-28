@@ -81,6 +81,7 @@ export const SETTING_KEYS: SettingDef[] = [
   { key: "STARTER_SET_SLUG", label: "Starter set granted on subscribe", group: "Online play", hint: "base" },
   { key: "PACK_RARITY_WEIGHTS", label: "Digital pack rarity weights", group: "Online play", hint: "common:70,uncommon:25,rare:5" },
   { key: "PACK_GUARANTEE_UNCOMMON", label: "Guarantee ≥1 Uncommon per pack", group: "Online play", hint: "true / false" },
+  { key: "CARD_ART_PUBLIC", label: "Show card artwork on the public site", group: "Site", hint: "true — sample cards on Home, The deck and product pages use the real art; false — art only inside online play" },
 
   // Security
   { key: "RECAPTCHA_SITE_KEY", label: "reCAPTCHA v3 site key", group: "Security" },

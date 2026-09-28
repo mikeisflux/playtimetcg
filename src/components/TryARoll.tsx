@@ -5,7 +5,7 @@ import { DieFace, GameCard } from "./ui";
 
 /* The interactive die: 11 ticks every 70ms (770ms), settles on 1–12.
    Honors prefers-reduced-motion by showing the result immediately. */
-export default function TryARoll({ large, onResult }: { large?: boolean; onResult?: (n: number) => void }) {
+export default function TryARoll({ large, onResult, art = {} }: { large?: boolean; onResult?: (n: number) => void; art?: Record<string, string> }) {
   const [n, setN] = useState(1);
   const [rolling, setRolling] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -56,7 +56,7 @@ export default function TryARoll({ large, onResult }: { large?: boolean; onResul
       </div>
       <div className="stack gap-20" style={{ alignItems: "flex-start" }}>
         <div className="label" style={{ fontSize: 12, letterSpacing: "0.18em" }}>A card from {face.category}</div>
-        <GameCard card={card} />
+        <GameCard card={{ ...card, art: art[card.code] ?? null }} />
       </div>
     </div>
   );

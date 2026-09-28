@@ -3,8 +3,8 @@ import Link from "next/link";
 import { RampStrip, ImageSlot, RarityFrame, SpiceMeter, Includes } from "@/components/ui";
 import TryARoll from "@/components/TryARoll";
 import AddToCart from "@/components/AddToCart";
-import { HOW_STEPS, RARITIES, HEAT_LEVELS, money } from "@/lib/content";
-import { activeProducts } from "@/lib/catalog";
+import { HOW_STEPS, RARITIES, HEAT_LEVELS, SAMPLE_CARDS, money } from "@/lib/content";
+import { activeProducts, cardArtMap } from "@/lib/catalog";
 import { buildMetadata, jsonLdFor } from "@/lib/seo";
 import { getSettings, flag } from "@/lib/settings";
 import { isAgeVerified } from "@/lib/auth";
@@ -18,9 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const [products, expansions, s, ageOk, jsonLd] = await Promise.all([
+  const [products, expansions, s, ageOk, jsonLd, art] = await Promise.all([
     activeProducts("set"), activeProducts("expansion"),
-    getSettings(["DISCREET_PACKAGING"]), isAgeVerified(), jsonLdFor("/"),
+    getSettings(["DISCREET_PACKAGING"]), isAgeVerified(), jsonLdFor("/"), cardArtMap(SAMPLE_CARDS.map((c) => c.code)),
   ]);
   const base = products.find((p) => p.slug === "base");
   const basePrice = base ? money(base.priceCents) : "$35";
@@ -85,7 +85,7 @@ export default async function Home() {
 
       {/* 6. Try a roll */}
       <section id="deck" className="surface" data-screen-label="Try a roll">
-        <div className="wrap section"><TryARoll /></div>
+        <div className="wrap section"><TryARoll art={art} /></div>
       </section>
 
       {/* 7. Rarity and heat */}

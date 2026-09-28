@@ -46,3 +46,12 @@ export async function productsByIds(ids: string[]): Promise<Map<string, Product>
   const rows = await prisma.product.findMany({ where: { id: { in: ids }, active: true } });
   return new Map(rows.map((r) => [r.id, r]));
 }
+
+/* Artwork URLs for a list of card codes (only cards whose art has been
+   rendered by scripts/import-card-art.mjs). Used by the public pages. */
+export async function cardArtMap(codes: string[]): Promise<Record<string, string>> {
+  try {
+    const rows = await prisma.card.findMany({ where: { code: { in: codes }, imageUrl: { not: null } }, select: { code: true } });
+    return Object.fromEntries(rows.map((r) => [r.code, `/api/cards/art/${r.code}`]));
+  } catch { return {}; }
+}

@@ -48,7 +48,7 @@ export default async function ProductPage({ params }: Params) {
               <div style={{ height: 12, background: p.accent }} />
               <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: 12, padding: "24px 0" }}>
                 {(setCards.length ? setCards : SAMPLE_CARDS.slice(0, 3)).map((c) => (
-                  <GameCard key={c.code} small setName={p.name.replace(/ — digital pack$/, "")} card={{ code: c.code, title: c.title, category: c.category as never, rarity: c.rarity as never, spice: c.spice, time: c.time, text: p.kind === "digital_pack" ? "Tear the pack open online to reveal which cards you get." : c.text }} />
+                  <GameCard key={c.code} small setName={p.name.replace(/ — digital pack$/, "")} card={{ code: c.code, title: c.title, category: c.category as never, rarity: c.rarity as never, spice: c.spice, time: c.time, text: p.kind === "digital_pack" ? "Tear the pack open online to reveal which cards you get." : c.text, art: "imageUrl" in c && c.imageUrl ? `/api/cards/art/${c.code}` : null }} />
                 ))}
               </div>
             </div>
