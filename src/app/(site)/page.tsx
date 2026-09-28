@@ -20,8 +20,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const [products, expansions, s, ageOk, jsonLd, samples, orgLd, siteLd] = await Promise.all([
-    activeProducts("set"), activeProducts("expansion"),
+  const [products, kits, expansions, s, ageOk, jsonLd, samples, orgLd, siteLd] = await Promise.all([
+    activeProducts("set"), activeProducts("kit"), activeProducts("expansion"),
     getSettings(["DISCREET_PACKAGING", "INTRO_VIDEO_URL", "INTRO_VIDEO_POSTER", "HERO_VIDEO_URL", "HERO_VIDEO_ENABLED", "HERO_VIDEO_AUTOPLAY"]), isAgeVerified(), jsonLdFor("/"), sampleCards(),
     organizationLd(), websiteLd(),
   ]);
@@ -164,6 +164,25 @@ export default async function Home() {
             ))}
           </div>
         </div>
+        {kits.length > 0 && (
+          <div className="wrap kitrow">
+            {kits.map((p) => (
+              <div key={p.id} className="prod prod--kit">
+                <ImageSlot src={ageOk ? p.imageUrl : null} alt={`${p.name} — Play Time accessories kit`} hint={`${p.name} · product photo · 1600 × 1200 px`} />
+                <div className="prod__body">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+                    <Link href={`/shop/${p.slug}`} className="prod__name" style={{ color: "var(--text-strong)" }}>{p.name}</Link>
+                    <div className="price">{money(p.priceCents)}</div>
+                  </div>
+                  {p.tag && <div className="prod__tag" style={{ color: p.accent }}>{p.tag}</div>}
+                  <Includes items={p.includes} />
+                  <div style={{ flex: 1 }} />
+                  <AddToCart product={p} className="btn btn--md" label="Add to cart" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         <div id="expansions" className="wrap" style={{ paddingBlock: "clamp(40px, 5vw, 64px) var(--section-y)" }}>
           <div className="between" style={{ marginBottom: 28, borderTop: "2px solid var(--rule)", paddingTop: 40 }}>
             <div className="stack gap-12">

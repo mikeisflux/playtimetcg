@@ -506,3 +506,7 @@ select.input { appearance: none; }
 /* ── Embedded DivinityCoin checkout ── */
 .dcframe { position: relative; width: 100%; background: var(--surface); border: 2px solid var(--rule); transition: height 200ms ease; min-height: 320px; }
 .dcframe__veil { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; gap: 16px; align-items: flex-start; justify-content: center; padding: 24px; background: var(--surface); }
+
+/* ── Play kit row: one product centred under the three sets ── */
+.kitrow { display: flex; justify-content: center; margin-top: 32px; }
+.prod--kit { width: min(100%, 420px); }

@@ -142,6 +142,18 @@ for (const e of catalog.expansions) {
     await prisma.product.update({ where: { id: existing.id }, data: copy });
   } else sort++;
 }
+/* The Play Time Playkit — accessories, no cards. Created once; price and
+   contents are edited in Admin → Products. */
+await prisma.product.upsert({
+  where: { slug: "playkit" },
+  update: {},
+  create: {
+    slug: "playkit", kind: "kit", name: "Play Time Playkit", tag: "Everything the cards ask for", priceCents: 6000, accent: "#A68CF5",
+    includes: ["Massage oil", "Lube", "Feather", "His and hers toy"],
+    description: "The night, kitted out. Massage oil, lube, a feather and a toy for each of you, in one discreet box. Nothing here is required — the base deck plays on its own — but a lot of cards get better when it’s within reach. No cards inside.",
+    imageSlot: "site-prod-playkit", sortIndex: sort++,
+  },
+});
 /* online play + digital + subscriptions */
 await prisma.product.upsert({
   where: { slug: "online-play" }, update: {},
@@ -158,7 +170,7 @@ for (const slug of ["date-night", "weekend", "long-term", "quick", "toy", "trave
     create: { slug: `digital-${slug}`, kind: "digital_pack", name: `${setRow.name} — digital pack`, tag: "3 random cards from the set", priceCents: 299, accent: setRow.accent, digital: true, cardSetId: setRow.id, packSize: 3, includes: ["3 cards from " + setRow.name, "Tear it open on screen", "Added to your collection instantly"], sortIndex: sort++ },
   });
 }
-console.log("✔ Products ensured (3 sets, 6 expansions, 2 subscriptions, 6 digital packs).");
+console.log("✔ Products ensured (3 sets, the Playkit, 6 expansions, 2 subscriptions, 6 digital packs).");
 
 /* ───── legal & help pages (created only when missing; edit in Admin → Pages) ───── */
 const PAGES = [

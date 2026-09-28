@@ -18,12 +18,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Shop() {
-  const [sets, expansions, subs, digital, s, ageOk, jsonLd] = await Promise.all([
-    activeProducts("set"), activeProducts("expansion"), activeProducts("subscription"), activeProducts("digital_pack"),
+  const [sets, kits, expansions, subs, digital, s, ageOk, jsonLd] = await Promise.all([
+    activeProducts("set"), activeProducts("kit"), activeProducts("expansion"), activeProducts("subscription"), activeProducts("digital_pack"),
     getSettings(["DISCREET_PACKAGING"]), isAgeVerified(), jsonLdFor("/shop"),
   ]);
   const discreet = flag(s.DISCREET_PACKAGING);
-  const listLd = await itemListLd("Play Time shop", "/shop", [...sets, ...expansions, ...subs, ...digital]);
+  const listLd = await itemListLd("Play Time shop", "/shop", [...sets, ...kits, ...expansions, ...subs, ...digital]);
 
   return (
     <>
@@ -54,6 +54,25 @@ export default async function Shop() {
             </div>
           ))}
         </div>
+        {kits.length > 0 && (
+          <div className="kitrow">
+            {kits.map((p) => (
+              <div key={p.id} className="prod prod--kit">
+                <Link href={`/shop/${p.slug}`} aria-label={`${p.name} — details`}><ImageSlot src={ageOk ? p.imageUrl : null} alt={`${p.name} — Play Time accessories kit`} hint={`${p.name} · product photo · 1600 × 1200 px`} /></Link>
+                <div className="prod__body">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+                    <h2 className="prod__name" style={{ margin: 0 }}><Link href={`/shop/${p.slug}`} style={{ color: "var(--text-strong)" }}>{p.name}</Link></h2>
+                    <div className="price">{money(p.priceCents)}</div>
+                  </div>
+                  {p.tag && <div className="prod__tag" style={{ color: p.accent }}>{p.tag}</div>}
+                  <Includes items={p.includes} />
+                  <div style={{ flex: 1 }} />
+                  <AddToCart product={p} className="btn btn--md" label="Add to cart" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="nextup" style={{ marginTop: 40 }}>
           <span className="nextup__label">Before you buy</span>
           <Link href="/pricing">Compare the sets</Link>

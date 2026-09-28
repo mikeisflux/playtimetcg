@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const p = await productBySlug(slug);
   if (!p) return { title: "Not found", robots: { index: false, follow: false } };
-  const kind = p.kind === "expansion" ? "expansion pack" : p.kind === "subscription" ? "subscription" : p.kind === "digital_pack" ? "digital pack" : "card game";
+  const kind = p.kind === "expansion" ? "expansion pack" : p.kind === "subscription" ? "subscription" : p.kind === "digital_pack" ? "digital pack" : p.kind === "kit" ? "accessories kit" : "card game";
   const fallback = `${p.name}: ${p.tag ? `${p.tag}. ` : ""}${p.includes.join(", ")}. Buy the Play Time ${kind} for ${money(p.priceCents)}.`;
   const description = (p.description || fallback).replace(/\s+/g, " ").trim();
   return buildMetadata(`/shop/${slug}`, {
@@ -61,7 +61,7 @@ export default async function ProductPage({ params }: Params) {
         </div>
         <div className="stack gap-28">
           <div className="stack gap-12">
-            <div className="eyebrow" style={{ color: p.accent }}>{p.kind === "subscription" ? "Subscription" : p.kind === "expansion" ? "Expansion pack" : p.kind === "digital_pack" ? "Digital pack" : "The deck"}</div>
+            <div className="eyebrow" style={{ color: p.accent }}>{p.kind === "subscription" ? "Subscription" : p.kind === "expansion" ? "Expansion pack" : p.kind === "digital_pack" ? "Digital pack" : p.kind === "kit" ? "Play kit" : "The deck"}</div>
             <h1 className="t-h2">{p.name}</h1>
             {p.tag && <div className="prod__tag" style={{ color: p.accent, fontSize: 12 }}>{p.tag}</div>}
           </div>

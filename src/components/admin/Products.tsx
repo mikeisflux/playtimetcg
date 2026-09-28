@@ -8,7 +8,7 @@ interface Product {
   subPlan: string | null; subInterval: string | null; imageUrl: string | null; imageSlot: string | null; sortIndex: number; cardSet?: { id: string; name: string } | null; _count?: { orderItems: number };
 }
 type Form = Omit<Product, "id" | "priceCents" | "includes" | "requiresChoice" | "cardSet" | "_count"> & { price: string; includes: string; rcType: string; rcCount: string };
-const KINDS = ["set", "expansion", "digital_pack", "subscription"];
+const KINDS = ["set", "kit", "expansion", "digital_pack", "subscription"];
 
 const blank: Form = { slug: "", kind: "set", name: "", tag: "", description: "", price: "", currency: "USD", accent: "#FF5C8A", includes: "", rcType: "", rcCount: "", featured: false, active: true, digital: false, cardSetId: "", packSize: null, subPlan: "", subInterval: "month", imageUrl: "", imageSlot: "", sortIndex: 0 };
 const toForm = (p: Product): Form => ({ ...blank, ...p, tag: p.tag || "", description: p.description || "", price: (p.priceCents / 100).toFixed(2), includes: (p.includes || []).join("\n"), rcType: p.requiresChoice?.type || "", rcCount: p.requiresChoice ? String(p.requiresChoice.count) : "", cardSetId: p.cardSetId || "", subPlan: p.subPlan || "", subInterval: p.subInterval || "month", imageUrl: p.imageUrl || "", imageSlot: p.imageSlot || "" });

@@ -5,7 +5,7 @@ import { prisma } from "./db";
 import type { Product } from "@/generated/prisma/client";
 import { SAMPLE_CARDS, type CardData, type Category, type Rarity } from "./content";
 
-export type ProductKind = "set" | "expansion" | "digital_pack" | "subscription";
+export type ProductKind = "set" | "kit" | "expansion" | "digital_pack" | "subscription";
 
 export interface PublicProduct {
   id: string; slug: string; kind: string; name: string; tag: string | null; description: string | null;

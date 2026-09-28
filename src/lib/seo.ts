@@ -145,7 +145,7 @@ export async function productLd(p: PublicProduct): Promise<Ld> {
     name: p.name, sku: p.slug, url, brand: BRAND, isFamilyFriendly: false,
     description: p.description || [p.tag, p.includes.join(", ")].filter(Boolean).join(". ") || undefined,
     image: p.imageUrl ? [absUrl(base, p.imageUrl)] : [`${base}/og.png`],
-    category: p.kind === "expansion" ? "Expansion pack" : p.kind === "subscription" ? "Subscription" : p.kind === "digital_pack" ? "Digital pack" : "Card game",
+    category: p.kind === "expansion" ? "Expansion pack" : p.kind === "subscription" ? "Subscription" : p.kind === "digital_pack" ? "Digital pack" : p.kind === "kit" ? "Accessories kit" : "Card game",
     audience: { "@type": "PeopleAudience", suggestedMinAge: 18 },
     offers: {
       "@type": "Offer", url, priceCurrency: "USD", price: (p.priceCents / 100).toFixed(2), availability: "https://schema.org/InStock",
