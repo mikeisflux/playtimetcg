@@ -143,17 +143,26 @@ for (const e of catalog.expansions) {
   } else sort++;
 }
 /* The Play Time Playkit — accessories, no cards. Created once; price and
-   contents are edited in Admin → Products. */
+   contents are edited in Admin → Products. Contents stay alphabetized. */
+const PLAYKIT_INCLUDES = ["Blindfold", "Feather", "His and hers toy", "Lube", "Massage oil"];
+const PLAYKIT_DESCRIPTION = "The night, kitted out. A blindfold, a feather, lube, massage oil and a toy for each of you, in one discreet box. Nothing here is required — the base deck plays on its own — but a lot of cards get better when it’s within reach. No cards inside.";
 await prisma.product.upsert({
   where: { slug: "playkit" },
   update: {},
   create: {
     slug: "playkit", kind: "kit", name: "Play Time Playkit", tag: "Everything the cards ask for", priceCents: 6000, accent: "#A68CF5",
-    includes: ["Massage oil", "Lube", "Feather", "His and hers toy"],
-    description: "The night, kitted out. Massage oil, lube, a feather and a toy for each of you, in one discreet box. Nothing here is required — the base deck plays on its own — but a lot of cards get better when it’s within reach. No cards inside.",
+    includes: PLAYKIT_INCLUDES,
+    description: PLAYKIT_DESCRIPTION,
     imageSlot: "site-prod-playkit", sortIndex: sort++,
   },
 });
+/* one-time: add the blindfold to a Playkit seeded before it was in the list */
+{
+  const kit = await prisma.product.findUnique({ where: { slug: "playkit" } });
+  if (kit && Array.isArray(kit.includes) && !kit.includes.includes("Blindfold")) {
+    await prisma.product.update({ where: { id: kit.id }, data: { includes: PLAYKIT_INCLUDES, description: PLAYKIT_DESCRIPTION } });
+  }
+}
 /* Product photos committed under public/products/<slug>.jpg — applied once
    (a photo uploaded later in Admin → Products wins). */
 for (const slug of ["base", "bundle", "collector", "playkit"]) {
