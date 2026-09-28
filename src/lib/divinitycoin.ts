@@ -134,11 +134,8 @@ class DivinityCoinClient {
     if (c.testMode) {
       /* Test mode: bounce straight to a local simulator page that lets the
          operator "pay" — it POSTs a signed payload to our own webhook. */
-      const u = new URL("/checkout/simulate", c.webhookUrl);
-      u.searchParams.set("order", input.orderId);
-      u.searchParams.set("success", input.successUrl);
-      u.searchParams.set("cancel", input.cancelUrl);
-      return { success: true, checkoutUrl: u.toString(), sessionId: `test_${input.orderId}` };
+      const q = new URLSearchParams({ order: input.orderId, success: input.successUrl, cancel: input.cancelUrl });
+      return { success: true, checkoutUrl: `/checkout/simulate?${q}`, sessionId: `test_${input.orderId}` };
     }
     try {
       const data = await this.request<{ checkoutUrl?: string; url?: string; sessionId?: string; id?: string; error?: string }>(c.checkoutPath, {
@@ -164,11 +161,8 @@ class DivinityCoinClient {
   async createSubscriptionCheckout(input: SubscriptionCheckoutInput): Promise<CheckoutResult> {
     const c = await config();
     if (c.testMode) {
-      const u = new URL("/checkout/simulate", c.webhookUrl);
-      u.searchParams.set("subscription", input.subscriptionId);
-      u.searchParams.set("success", input.successUrl);
-      u.searchParams.set("cancel", input.cancelUrl);
-      return { success: true, checkoutUrl: u.toString(), sessionId: `test_sub_${input.subscriptionId}` };
+      const q = new URLSearchParams({ subscription: input.subscriptionId, success: input.successUrl, cancel: input.cancelUrl });
+      return { success: true, checkoutUrl: `/checkout/simulate?${q}`, sessionId: `test_sub_${input.subscriptionId}` };
     }
     try {
       const data = await this.request<{ checkoutUrl?: string; url?: string; sessionId?: string; id?: string; error?: string }>(`${c.checkoutPath}/subscription`, {

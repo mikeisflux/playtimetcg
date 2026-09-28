@@ -88,8 +88,8 @@ export default function UserDetail({ id }: { id: string }) {
           <div className="admCard">
             <div className="admCard__hd"><h2 className="admH2">Actions</h2></div>
             <div className="admRow">
-              <ConfirmButton className="admBtn" message={u.isAdmin ? "Remove admin rights?" : "Grant admin rights? They will see everything here."} onConfirm={() => act("toggle_admin", {}, "Admin flag updated")}>{u.isAdmin ? "Remove admin" : "Make admin"}</ConfirmButton>
-              <ConfirmButton className="admBtn" message="Create a free 1-year online-play subscription and grant the starter deck?" onConfirm={() => act("comp_online_play", {}, "Online play granted")}>Comp online play</ConfirmButton>
+              <ConfirmButton className="admBtn" message={u.isAdmin ? "Remove admin rights?" : "Grant admin rights? They will see everything here."} onConfirm={async () => { await act("toggle_admin", {}, "Admin flag updated"); }}>{u.isAdmin ? "Remove admin" : "Make admin"}</ConfirmButton>
+              <ConfirmButton className="admBtn" message="Create a free 1-year online-play subscription and grant the starter deck?" onConfirm={async () => { await act("comp_online_play", {}, "Online play granted"); }}>Comp online play</ConfirmButton>
             </div>
             <form className="admRow" onSubmit={async (e) => { e.preventDefault(); if (await act("reset_password", { password: pw }, "Password reset")) setPw(""); }}>
               <Input type="text" placeholder="New password (min 8)" value={pw} onChange={(e) => setPw(e.target.value)} style={{ maxWidth: 260 }} autoComplete="off" />

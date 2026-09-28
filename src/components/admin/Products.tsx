@@ -47,15 +47,15 @@ export default function Products() {
             <Field label="Slug" hint="/shop/<slug>"><Input required value={edit.form.slug} onChange={(e) => set({ slug: e.target.value })} className="admInput--mono" /></Field>
             <Field label="Kind"><Select value={edit.form.kind} onChange={(e) => set({ kind: e.target.value, digital: ["digital_pack", "subscription"].includes(e.target.value) || edit.form.digital })} options={KINDS} /></Field>
             <Field label="Price (USD)"><Input type="number" step="0.01" min="0" required value={edit.form.price} onChange={(e) => set({ price: e.target.value })} /></Field>
-            <Field label="Tag" hint="short label, e.g. Best seller"><Input value={edit.form.tag} onChange={(e) => set({ tag: e.target.value })} /></Field>
+            <Field label="Tag" hint="short label, e.g. Best seller"><Input value={edit.form.tag ?? ""} onChange={(e) => set({ tag: e.target.value })} /></Field>
             <Field label="Accent color"><div className="admRow"><input type="color" value={edit.form.accent} onChange={(e) => set({ accent: e.target.value })} /><Input value={edit.form.accent} onChange={(e) => set({ accent: e.target.value })} className="admInput--mono" style={{ maxWidth: 120 }} /></div></Field>
             <Field label="Sort index"><Input type="number" value={edit.form.sortIndex} onChange={(e) => set({ sortIndex: Number(e.target.value) })} /></Field>
             <Field label="Image" hint="upload or paste a URL">
-              <div className="admRow"><Input value={edit.form.imageUrl} onChange={(e) => set({ imageUrl: e.target.value })} /><UploadButton onDone={(url) => set({ imageUrl: url })} onError={toast.err} /></div>
+              <div className="admRow"><Input value={edit.form.imageUrl ?? ""} onChange={(e) => set({ imageUrl: e.target.value })} /><UploadButton onDone={(url) => set({ imageUrl: url })} onError={toast.err} /></div>
               {edit.form.imageUrl && <img src={edit.form.imageUrl} alt="" style={{ maxHeight: 80, marginTop: 6 }} />}
             </Field>
-            <Field label="Image slot" hint="design handoff slot id, optional"><Input value={edit.form.imageSlot} onChange={(e) => set({ imageSlot: e.target.value })} className="admInput--mono" /></Field>
-            <Field label="Description" className="span2"><Textarea value={edit.form.description} onChange={(e) => set({ description: e.target.value })} /></Field>
+            <Field label="Image slot" hint="design handoff slot id, optional"><Input value={edit.form.imageSlot ?? ""} onChange={(e) => set({ imageSlot: e.target.value })} className="admInput--mono" /></Field>
+            <Field label="Description" className="span2"><Textarea value={edit.form.description ?? ""} onChange={(e) => set({ description: e.target.value })} /></Field>
             <Field label="Includes (one per line)" className="span2"><Textarea value={edit.form.includes} onChange={(e) => set({ includes: e.target.value })} style={{ minHeight: 100 }} /></Field>
             <Field label="Requires choice — type" hint="e.g. expansion (buyer picks N)"><Input value={edit.form.rcType} onChange={(e) => set({ rcType: e.target.value })} /></Field>
             <Field label="Requires choice — count"><Input type="number" min="0" value={edit.form.rcCount} onChange={(e) => set({ rcCount: e.target.value })} /></Field>

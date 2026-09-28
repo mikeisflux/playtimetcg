@@ -39,6 +39,8 @@ ids etc. in **/admin/settings** — they are stored in the database, not in `.en
 
 ## Deploy (Ubuntu, root)
 
+Full walkthrough with DNS, firewall, SSL and post-install configuration: [docs/SERVER-SETUP.md](docs/SERVER-SETUP.md).
+
 ```bash
 git clone https://github.com/mikeisflux/playtimetcg.git /opt/playtime
 echo 'SEED_ADMIN_PASSWORD="…"' >> /opt/playtime/.env
