@@ -195,18 +195,10 @@ fetch_promo_video() {
 }
 
 set_video_settings() {
-  # only fill INTRO_VIDEO_URL when it is unset, so an admin override sticks
+  # fills INTRO_VIDEO_URL only when it is unset, so an admin override sticks
   [ -f "$PROMO_FILE" ] || return 0
   cd "$APP_DIR"; load_env
-  node --experimental-strip-types - <<'JS' 2>/dev/null || true
-import "dotenv/config";
-import { PrismaClient } from "./src/generated/prisma/client.ts";
-import { PrismaPg } from "@prisma/adapter-pg";
-const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL ?? "" }) });
-const cur = await prisma.setting.findUnique({ where: { key: "INTRO_VIDEO_URL" } });
-if (!cur?.value) { await prisma.setting.upsert({ where: { key: "INTRO_VIDEO_URL" }, update: { value: "/uploads/promo.mp4" }, create: { key: "INTRO_VIDEO_URL", value: "/uploads/promo.mp4" } }); console.log("  INTRO_VIDEO_URL set to /uploads/promo.mp4"); }
-await prisma.$disconnect();
-JS
+  node --experimental-strip-types scripts/set-setting.mjs INTRO_VIDEO_URL /uploads/promo.mp4 --if-unset 2>&1 | grep -v -E "Warning|Reparsing|eliminate|trace-warnings" || log "⚠ could not write INTRO_VIDEO_URL — set it in Admin → Settings → Site"
 }
 
 import_cards() {
