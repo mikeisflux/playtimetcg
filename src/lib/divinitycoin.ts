@@ -131,9 +131,16 @@ class DivinityCoinClient {
     try {
       const c = await config();
       if (!c.apiKey) return { ok: false, detail: "API key not set" };
-      const res = await fetch(`${c.baseUrl}${c.internalPath}/health`, { headers: { "X-Internal-Key": c.apiKey }, signal: AbortSignal.timeout(5000) });
-      if (!res.ok) console.error(`[divinitycoin] GET ${c.baseUrl}${c.internalPath}/health -> HTTP ${res.status}`);
-      return { ok: res.ok, detail: res.ok ? await res.text() : `HTTP ${res.status}` };
+      const url = `${c.baseUrl}${c.internalPath}/health`;
+      const res = await fetch(url, { headers: { "X-Internal-Key": c.apiKey, "X-Partner": c.partner }, signal: AbortSignal.timeout(5000) });
+      const body = (await res.text().catch(() => "")).replace(/\s+/g, " ").trim().slice(0, 300);
+      const server = res.headers.get("server") || "unknown";
+      const ctype = res.headers.get("content-type") || "";
+      if (!res.ok) {
+        console.error(`[divinitycoin] GET ${url} -> HTTP ${res.status} (server: ${server}; content-type: ${ctype}; partner: ${c.partner}; key: ${c.apiKey.slice(0, 4)}…${c.apiKey.slice(-4)}) body: ${body}`);
+        return { ok: false, detail: `HTTP ${res.status} from ${server}${body ? `: ${body}` : ""}` };
+      }
+      return { ok: true, detail: body };
     } catch (err) { return { ok: false, detail: String(err) }; }
   }
 
