@@ -45,7 +45,6 @@ export const SETTING_KEYS: SettingDef[] = [
   { key: "DIVINITYCOIN_WEBHOOK_SECRET", label: "DivinityCoin webhook signing secret", group: "DivinityCoin", secret: true, hint: "HMAC-SHA256 secret DivinityCoin uses to sign webhook deliveries" },
   { key: "DIVINITYCOIN_WEBHOOK_URL", label: "Webhook URL (paste into DivinityCoin partner settings)", group: "DivinityCoin", readonly: true, hint: "https://playtimetcg.com/api/webhooks/divinitycoin" },
   { key: "DIVINITYCOIN_INTERNAL_PATH", label: "Internal API path prefix", group: "DivinityCoin", hint: "/internal (default). Calls are POST <prefix>?action=validate|balance|hold|release|capture" },
-  { key: "DIVINITYCOIN_CHECKOUT_PATH", label: "Hosted checkout path", group: "DivinityCoin", hint: "/api/partner/checkout (default)" },
   { key: "DIVINITYCOIN_ALLOW_CREDITS", label: "Allow paying with DivinityCoin credit balance", group: "DivinityCoin", hint: "true / false" },
   { key: "DIVINITYCOIN_TEST_MODE", label: "Test mode", group: "DivinityCoin", hint: "true — orders can be marked paid from /admin without a real webhook" },
 

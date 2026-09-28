@@ -14,6 +14,7 @@ interface Detail {
     packs: { id: string; qty: number; size: number; product: { name: string } | null; set: { name: string } }[];
     _count: { cards: number; openings: number; hostedRooms: number; guestRooms: number };
   };
+  isSelf: boolean;
   collectionQty: number;
   digitalProducts: { id: string; name: string; packSize: number | null }[];
 }
@@ -24,7 +25,7 @@ export default function UserDetail({ id }: { id: string }) {
   const router = useRouter();
   const [pw, setPw] = useState("");
   const [pack, setPack] = useState({ productId: "", qty: 1 });
-  const [profile, setProfile] = useState<{ name: string; email: string; marketingOptIn: boolean } | null>(null);
+  const [profile, setProfile] = useState<{ name: string; email: string; isAdmin: boolean; ageVerified: boolean; marketingOptIn: boolean } | null>(null);
 
   async function act(action: string, extra: Record<string, unknown> = {}, msg = "Done") {
     try { await api(`/api/admin/users/${id}`, { method: "POST", json: { action, ...extra } }); toast.ok(msg); reload(); return true; } catch (e) { toast.err(e); return false; }
@@ -32,7 +33,7 @@ export default function UserDetail({ id }: { id: string }) {
   if (error) return <div className="admNote admNote--err">{error}</div>;
   if (!data) return <div className="admMuted">Loading…</div>;
   const u = data.user;
-  const p = profile ?? { name: u.name, email: u.email, marketingOptIn: u.marketingOptIn };
+  const p = profile ?? { name: u.name, email: u.email, isAdmin: u.isAdmin, ageVerified: !!u.ageVerifiedAt, marketingOptIn: u.marketingOptIn };
 
   return (
     <>
@@ -50,12 +51,19 @@ export default function UserDetail({ id }: { id: string }) {
       <div className="admSplit">
         <div className="admStack">
           <div className="admCard">
-            <div className="admCard__hd"><h2 className="admH2">Profile</h2></div>
+            <div className="admCard__hd"><h2 className="admH2">Edit</h2>{data.isSelf && <span className="admMuted">This is you — your admin flag is locked.</span>}</div>
             <form className="admForm" onSubmit={async (e) => { e.preventDefault(); if (await act("update", p, "Profile saved")) setProfile(null); }}>
-              <Field label="Name"><Input value={p.name} onChange={(e) => setProfile({ ...p, name: e.target.value })} /></Field>
-              <Field label="Email"><Input type="email" value={p.email} onChange={(e) => setProfile({ ...p, email: e.target.value })} /></Field>
-              <div className="admRow" style={{ alignItems: "flex-end" }}><Checkbox label="Marketing opt-in" checked={p.marketingOptIn} onChange={(e) => setProfile({ ...p, marketingOptIn: e.target.checked })} /></div>
-              <div className="admRow" style={{ alignItems: "flex-end" }}><button className="admBtn admBtn--primary" disabled={!profile}>Save</button></div>
+              <Field label="Name"><Input required value={p.name} onChange={(e) => setProfile({ ...p, name: e.target.value })} /></Field>
+              <Field label="Email" hint="Stored lower-case. Must be unique."><Input type="email" required value={p.email} onChange={(e) => setProfile({ ...p, email: e.target.value })} /></Field>
+              <div className="admStack span2" style={{ gap: 8 }}>
+                <Checkbox label="Admin — full access to this panel" checked={p.isAdmin} disabled={data.isSelf} onChange={(e) => setProfile({ ...p, isAdmin: e.target.checked })} />
+                <Checkbox label={`Age verified${u.ageVerifiedAt ? ` (since ${new Date(u.ageVerifiedAt).toLocaleDateString()})` : ""}`} checked={p.ageVerified} onChange={(e) => setProfile({ ...p, ageVerified: e.target.checked })} />
+                <Checkbox label="Marketing opt-in" checked={p.marketingOptIn} onChange={(e) => setProfile({ ...p, marketingOptIn: e.target.checked })} />
+              </div>
+              <div className="admRow span2">
+                <button className="admBtn admBtn--primary" disabled={!profile}>Save</button>
+                {profile && <button type="button" className="admBtn admBtn--ghost" onClick={() => setProfile(null)}>Discard</button>}
+              </div>
             </form>
           </div>
           <div className="admCard">
@@ -87,21 +95,27 @@ export default function UserDetail({ id }: { id: string }) {
         <div className="admStack">
           <div className="admCard">
             <div className="admCard__hd"><h2 className="admH2">Actions</h2></div>
+            <div className="admStack" style={{ gap: 6 }}>
+              <div className="admLabel">Reset password</div>
+              <form className="admRow" onSubmit={async (e) => { e.preventDefault(); if (await act("reset_password", { password: pw }, "Password set — their other sessions are signed out")) setPw(""); }}>
+                <Input type="text" placeholder="New password (min 8)" value={pw} onChange={(e) => setPw(e.target.value)} style={{ maxWidth: 260 }} autoComplete="off" className="admInput--mono" />
+                <button className="admBtn" disabled={pw.length < 8}>Set password</button>
+                <ConfirmButton className="admBtn" message={`Email a password-reset link to ${u.email}? It is valid for 24 hours.`} onConfirm={async () => { await act("send_reset_link", {}, "Reset link sent"); }}>Email reset link</ConfirmButton>
+              </form>
+              <span className="admHint">Type a password to set it directly, or email them a link so they choose their own.</span>
+            </div>
             <div className="admRow">
-              <ConfirmButton className="admBtn" message={u.isAdmin ? "Remove admin rights?" : "Grant admin rights? They will see everything here."} onConfirm={async () => { await act("toggle_admin", {}, "Admin flag updated"); }}>{u.isAdmin ? "Remove admin" : "Make admin"}</ConfirmButton>
+              <ConfirmButton className="admBtn" message={`Send the welcome email with a password-set link to ${u.email}?`} onConfirm={async () => { await act("send_welcome", {}, "Welcome email sent"); }}>Send welcome email</ConfirmButton>
               <ConfirmButton className="admBtn" message="Create a free 1-year online-play subscription and grant the starter deck?" onConfirm={async () => { await act("comp_online_play", {}, "Online play granted"); }}>Comp online play</ConfirmButton>
             </div>
-            <form className="admRow" onSubmit={async (e) => { e.preventDefault(); if (await act("reset_password", { password: pw }, "Password reset")) setPw(""); }}>
-              <Input type="text" placeholder="New password (min 8)" value={pw} onChange={(e) => setPw(e.target.value)} style={{ maxWidth: 260 }} autoComplete="off" />
-              <button className="admBtn" disabled={pw.length < 8}>Set password</button>
-            </form>
             <form className="admRow" onSubmit={async (e) => { e.preventDefault(); await act("grant_packs", pack, "Packs granted"); }}>
               <Select value={pack.productId} onChange={(e) => setPack({ ...pack, productId: e.target.value })} options={[{ value: "", label: "Digital pack…" }, ...data.digitalProducts.map((d) => ({ value: d.id, label: `${d.name} (${d.packSize ?? 3} cards)` }))]} style={{ maxWidth: 260 }} />
               <Input type="number" min={1} max={100} value={pack.qty} onChange={(e) => setPack({ ...pack, qty: Number(e.target.value) })} style={{ maxWidth: 80 }} />
               <button className="admBtn" disabled={!pack.productId}>Grant packs</button>
             </form>
             <div className="admRow" style={{ borderTop: "1px solid var(--rule)", paddingTop: 10 }}>
-              <ConfirmButton className="admBtn admBtn--danger" message={`Delete ${u.email} and everything they own (collection, subscriptions, rooms)? Orders stay, unlinked.`} onConfirm={async () => { try { await api(`/api/admin/users/${id}`, { method: "DELETE" }); router.push("/admin/users"); } catch (e) { toast.err(e); } }}>Delete user</ConfirmButton>
+              <ConfirmButton className="admBtn admBtn--danger" disabled={data.isSelf} message={`Delete ${u.email} and everything they own (collection, subscriptions, rooms)? Orders stay, unlinked.`} onConfirm={async () => { try { await api(`/api/admin/users/${id}`, { method: "DELETE" }); router.push("/admin/users"); } catch (e) { toast.err(e); } }}>Delete user</ConfirmButton>
+              {data.isSelf && <span className="admHint">You cannot delete your own account.</span>}
             </div>
           </div>
           <div className="admCard">

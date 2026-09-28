@@ -4,13 +4,17 @@ import { prisma } from "@/lib/db";
 import { money } from "@/lib/content";
 import { buildMetadata } from "@/lib/seo";
 import ClearCart from "@/components/ClearCart";
+import { confirmCheckoutSession } from "@/lib/orders";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/checkout/success", { title: "Thank you", noindex: true });
 }
 
-export default async function Success({ searchParams }: { searchParams: Promise<{ order?: string }> }) {
-  const { order: id } = await searchParams;
+export default async function Success({ searchParams }: { searchParams: Promise<{ order?: string; session_id?: string }> }) {
+  const { order: id, session_id } = await searchParams;
+  /* DivinityCoin appends ?session_id=cs_… on the way back. If its webhook
+     hasn't landed yet, ask DivinityCoin directly and settle now. */
+  if (id && session_id) await confirmCheckoutSession(id, session_id).catch(() => {});
   const order = id ? await prisma.order.findUnique({ where: { id }, include: { items: true } }) : null;
   const paid = order && ["paid", "fulfilled", "shipped"].includes(order.status);
   return (

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { audit } from "@/lib/auth";
-import { divinitycoin } from "@/lib/divinitycoin";
+import { cancelSubscription } from "@/lib/subscriptions";
 import { guard, bad, notFound, readJson } from "../../_lib";
 
 export const dynamic = "force-dynamic";
@@ -23,11 +23,7 @@ export async function POST(req: Request, ctx: Ctx) {
   const before = { status: sub.status, currentPeriodEnd: sub.currentPeriodEnd };
   switch (b.action) {
     case "cancel": {
-      if (sub.providerRef) {
-        const r = await divinitycoin.cancelSubscription(sub.providerRef);
-        if (!r.success) return bad(`DivinityCoin cancel failed: ${r.error || "unknown"}`, 502);
-      }
-      await prisma.subscription.update({ where: { id }, data: { status: "cancelled", cancelledAt: new Date(), cancelAtPeriodEnd: false } });
+      await cancelSubscription(id, true);
       break;
     }
     case "past_due": await prisma.subscription.update({ where: { id }, data: { status: "past_due" } }); break;

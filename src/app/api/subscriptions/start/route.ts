@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
-import { startSubscription, type ShippingInput } from "@/lib/orders";
+import { type ShippingInput } from "@/lib/orders";
+import { startSubscription } from "@/lib/subscriptions";
 
 export async function POST(req: Request) {
   const user = await getSessionUser();

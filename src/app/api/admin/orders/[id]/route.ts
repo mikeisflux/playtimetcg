@@ -79,9 +79,20 @@ export async function POST(req: Request, ctx: Ctx) {
     case "refund": {
       if (!["paid", "fulfilled", "shipped"].includes(order.status)) return bad("Only paid orders can be refunded.");
       const amountCents = Number.isFinite(body.amountCents) && Number(body.amountCents) > 0 ? Math.min(Number(body.amountCents), order.totalCents) : order.totalCents;
-      if (order.paymentRef && order.paymentMethod !== "comp") {
-        const r = await divinitycoin.refund(order.paymentRef, amountCents / 100, str(body.reason, 300) || "Admin refund");
+      if (order.paymentRef && order.paymentMethod === "divinitycoin_checkout") {
+        /* paymentRef is the PaymentIntent (pi_…) once the webhook has run; a
+           session id (cs_…) means the webhook never arrived — resolve it. */
+        let pi = order.paymentRef;
+        if (pi.startsWith("cs_")) {
+          const sess = await divinitycoin.getCheckoutSession(pi).catch(() => null);
+          if (!sess?.paymentIntentId) return bad("DivinityCoin has no completed payment for this order, so there is nothing to refund there. Mark it refunded manually if you refunded another way.", 400);
+          pi = sess.paymentIntentId;
+        }
+        const partial = amountCents < order.totalCents;
+        const r = await divinitycoin.refund(pi, partial ? amountCents : undefined, str(body.reason, 300) || "Admin refund", order.id, partial);
         if (!r.success) return bad(`DivinityCoin refund failed: ${r.error || "unknown error"}`, 502);
+      } else if (order.paymentMethod === "divinitycoin_credits") {
+        return bad("This order was paid with DivinityCoin credits; refund it from the DivinityCoin admin, then mark it refunded here with a note.", 400);
       }
       await prisma.order.update({ where: { id }, data: { status: "refunded", notes: [order.notes, `Refunded $${(amountCents / 100).toFixed(2)} by ${g.name} on ${new Date().toISOString()}${body.reason ? ` — ${str(body.reason, 300)}` : ""}`].filter(Boolean).join("\n") } });
       break;

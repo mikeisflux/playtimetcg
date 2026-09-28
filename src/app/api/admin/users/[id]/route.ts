@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { audit, hashPassword } from "@/lib/auth";
 import { grantPacks, grantStarterDeck } from "@/lib/packs";
 import { guard, bad, notFound, readJson, str, int } from "../../_lib";
+import { EMAIL_RE, safeUser, sendResetLinkEmail, sendWelcomeEmail } from "../_lib";
 
 export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ id: string }> };
@@ -23,10 +24,8 @@ export async function GET(_req: Request, ctx: Ctx) {
   });
   if (!user) return notFound();
   const collection = await prisma.userCard.aggregate({ where: { userId: id }, _sum: { qty: true } });
-  const { passwordHash: _ph, resetToken: _rt, ...safe } = user;
-  void _ph; void _rt;
   const products = await prisma.product.findMany({ where: { kind: "digital_pack", active: true }, select: { id: true, name: true, packSize: true } });
-  return NextResponse.json({ user: safe, collectionQty: collection._sum.qty ?? 0, digitalProducts: products });
+  return NextResponse.json({ user: safeUser(user), isSelf: user.id === g.id, collectionQty: collection._sum.qty ?? 0, digitalProducts: products });
 }
 
 export async function POST(req: Request, ctx: Ctx) {
@@ -34,7 +33,7 @@ export async function POST(req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) return notFound();
-  const b = await readJson<{ action?: string; password?: string; productId?: string; qty?: number; name?: string; email?: string; marketingOptIn?: boolean }>(req);
+  const b = await readJson<{ action?: string; password?: string; productId?: string; qty?: number; name?: string; email?: string; marketingOptIn?: boolean; isAdmin?: boolean; ageVerified?: boolean }>(req);
   switch (b.action) {
     case "toggle_admin": {
       if (user.id === g.id) return bad("You cannot change your own admin flag.");
@@ -51,10 +50,31 @@ export async function POST(req: Request, ctx: Ctx) {
     }
     case "update": {
       const email = str(b.email, 200).trim().toLowerCase() || user.email;
+      if (!EMAIL_RE.test(email)) return bad("Enter a valid email address.");
       const dupe = await prisma.user.findUnique({ where: { email } });
       if (dupe && dupe.id !== id) return bad("Email already in use.");
-      const row = await prisma.user.update({ where: { id }, data: { email, name: str(b.name, 120).trim() || user.name, marketingOptIn: b.marketingOptIn === undefined ? user.marketingOptIn : !!b.marketingOptIn } });
-      await audit(g.id, "user.update", "user", id, { email: user.email, name: user.name }, { email: row.email, name: row.name });
+      const isAdmin = b.isAdmin === undefined ? user.isAdmin : !!b.isAdmin;
+      if (user.id === g.id && isAdmin !== user.isAdmin) return bad("You cannot change your own admin flag.");
+      const ageVerifiedAt = b.ageVerified === undefined ? user.ageVerifiedAt : (b.ageVerified ? (user.ageVerifiedAt ?? new Date()) : null);
+      const before = { email: user.email, name: user.name, isAdmin: user.isAdmin, ageVerified: !!user.ageVerifiedAt, marketingOptIn: user.marketingOptIn };
+      const row = await prisma.user.update({ where: { id }, data: {
+        email, name: str(b.name, 120).trim() || user.name, isAdmin, ageVerifiedAt,
+        marketingOptIn: b.marketingOptIn === undefined ? user.marketingOptIn : !!b.marketingOptIn,
+      } });
+      const after = { email: row.email, name: row.name, isAdmin: row.isAdmin, ageVerified: !!row.ageVerifiedAt, marketingOptIn: row.marketingOptIn };
+      await audit(g.id, "user.update", "user", id, before, after);
+      return NextResponse.json({ ok: true, user: safeUser(row) });
+    }
+    case "send_reset_link": {
+      const r = await sendResetLinkEmail(user);
+      await audit(g.id, "user.send_reset_link", "user", id, undefined, { ok: r.ok, error: r.error ?? null });
+      if (!r.ok) return bad(r.error || "Email could not be sent.", 502);
+      return NextResponse.json({ ok: true });
+    }
+    case "send_welcome": {
+      const r = await sendWelcomeEmail(user);
+      await audit(g.id, "user.send_welcome", "user", id, undefined, { ok: r.ok, error: r.error ?? null });
+      if (!r.ok) return bad(r.error || "Email could not be sent.", 502);
       return NextResponse.json({ ok: true });
     }
     case "comp_online_play": {

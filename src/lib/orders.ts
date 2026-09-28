@@ -3,8 +3,9 @@
 import { prisma } from "./db";
 import { getSettings, flag } from "./settings";
 import { divinitycoin, type DivinityWebhookEvent } from "./divinitycoin";
+import { isSubscriptionReference, onSubscriptionSetupComplete, onSubscriptionChargeEvent } from "./subscriptions";
 import { sendTemplate } from "./sendgrid";
-import { grantPacks, grantStarterDeck } from "./packs";
+import { grantPacks } from "./packs";
 import { money } from "./content";
 import type { Order, OrderItem, Product } from "@/generated/prisma/client";
 
@@ -87,7 +88,9 @@ export async function createOrder(input: {
   return { order, priced };
 }
 
-/* Start a DivinityCoin hosted checkout for an order. */
+/* Start a DivinityCoin hosted checkout for an order. DivinityCoin sends the
+   shopper back to returnUrl with ?session_id=cs_… and fires
+   checkout.completed + payment.succeeded to our webhook. */
 export async function startCheckout(orderId: string): Promise<{ url: string }> {
   const order = await prisma.order.findUnique({ where: { id: orderId }, include: { items: true } });
   if (!order) throw new Error("Order not found.");
@@ -95,20 +98,24 @@ export async function startCheckout(orderId: string): Promise<{ url: string }> {
   const s = await getSettings(["SITE_URL", "SITE_NAME"]);
   const base = (s.SITE_URL || "https://playtimetcg.com").replace(/\/$/, "");
   const res = await divinitycoin.createCheckout({
-    orderId: order.id,
-    amount: order.totalCents / 100,
+    reference: order.id,
+    amountCents: order.totalCents,
     currency: order.currency,
     email: order.email,
-    customerId: order.userId ?? undefined,
-    description: `${s.SITE_NAME || "Play Time"} order #${order.number}`,
-    lineItems: order.items.map((i) => ({ name: i.name, quantity: i.qty, unitAmount: i.unitCents / 100 })),
-    successUrl: `${base}/checkout/success?order=${order.id}`,
+    customerId: platformUserId(order.userId, order.id),
+    description: `${s.SITE_NAME || "Play Time"} order #${order.number} — ${order.items.map((i) => `${i.name} × ${i.qty}`).join(", ")}`.slice(0, 200),
+    returnUrl: `${base}/checkout/success?order=${order.id}`,
     cancelUrl: `${base}/checkout/cancel?order=${order.id}`,
-    metadata: { orderNumber: String(order.number) },
   });
   if (!res.success || !res.checkoutUrl) throw new Error(res.error || "Could not start DivinityCoin checkout.");
   await prisma.order.update({ where: { id: order.id }, data: { status: "awaiting_payment", paymentMethod: "divinitycoin_checkout", paymentRef: res.sessionId ?? null } });
   return { url: res.checkoutUrl };
+}
+
+/* DivinityCoin keys credit balances by platformUserId. Signed-in shoppers use
+   their user id; guests get a per-order id so nothing is shared. */
+export function platformUserId(userId: string | null | undefined, orderId: string): string {
+  return userId || `guest_${orderId}`;
 }
 
 /* Pay with the shopper's DivinityCoin credit balance: hold → capture. */
@@ -184,141 +191,112 @@ export async function markOrderFailed(orderId: string, reason: string) {
 
 /* ───────── Subscriptions ───────── */
 
-export async function startSubscription(userId: string, productId: string, shipping?: ShippingInput | null): Promise<{ url: string; subscriptionId: string }> {
-  const [user, product] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId } }),
-    prisma.product.findUnique({ where: { id: productId } }),
-  ]);
-  if (!user || !product || product.kind !== "subscription" || !product.subPlan) throw new Error("Subscription not found.");
-  if (product.subPlan === "monthly_cards" && !shipping) throw new Error("A shipping address is required for the monthly cards.");
-  const existing = await prisma.subscription.findFirst({ where: { userId, plan: product.subPlan, status: { in: ["active", "past_due"] } } });
-  if (existing) throw new Error("You already have this subscription.");
-  const sub = await prisma.subscription.create({
-    data: {
-      userId, plan: product.subPlan, status: "pending", priceCents: product.priceCents,
-      interval: product.subInterval || "month",
-      shipping: shipping ? JSON.parse(JSON.stringify(shipping)) : undefined,
-    },
-  });
-  const s = await getSettings(["SITE_URL", "SITE_NAME"]);
-  const base = (s.SITE_URL || "https://playtimetcg.com").replace(/\/$/, "");
-  const res = await divinitycoin.createSubscriptionCheckout({
-    subscriptionId: sub.id, plan: product.subPlan, amount: product.priceCents / 100,
-    interval: (product.subInterval as "month" | "year") || "month", email: user.email, customerId: user.id,
-    description: `${s.SITE_NAME || "Play Time"} — ${product.name}`,
-    successUrl: `${base}/account/subscriptions?started=${sub.id}`,
-    cancelUrl: `${base}/account/subscriptions?cancelled=${sub.id}`,
-  });
-  if (!res.success || !res.checkoutUrl) {
-    await prisma.subscription.delete({ where: { id: sub.id } });
-    throw new Error(res.error || "Could not start DivinityCoin checkout.");
-  }
-  return { url: res.checkoutUrl, subscriptionId: sub.id };
-}
-
-export async function activateSubscription(subId: string, data: { providerRef?: string; periodEnd?: Date; amountCents?: number; paymentRef?: string; periodStart?: Date }) {
-  const sub = await prisma.subscription.findUnique({ where: { id: subId }, include: { user: true } });
-  if (!sub) return;
-  const periodEnd = data.periodEnd ?? new Date(Date.now() + (sub.interval === "year" ? 365 : 31) * 86400_000);
-  const wasActive = sub.status === "active";
-  await prisma.subscription.update({
-    where: { id: sub.id },
-    data: { status: "active", providerRef: data.providerRef ?? sub.providerRef, currentPeriodEnd: periodEnd, cancelAtPeriodEnd: false },
-  });
-  await prisma.subscriptionInvoice.create({
-    data: {
-      subscriptionId: sub.id, amountCents: data.amountCents ?? sub.priceCents, status: "paid",
-      periodStart: data.periodStart ?? new Date(), periodEnd, paymentRef: data.paymentRef ?? null,
-    },
-  });
-  if (sub.plan === "online_play") await grantStarterDeck(sub.userId);
-  await sendTemplate(wasActive ? "subscription_renewed" : "subscription_started", sub.user.email, {
-    subject: wasActive ? "Your Play Time subscription renewed" : "Welcome to Play Time",
-    fallbackText: wasActive ? "Your subscription renewed. Thanks for playing." : "Your subscription is active.",
-    name: sub.user.name, plan: sub.plan === "online_play" ? "Online play" : "Monthly cards",
-    amount: money(data.amountCents ?? sub.priceCents), periodEnd: periodEnd.toLocaleDateString("en-US", { dateStyle: "long" }),
-  }, { userId: sub.userId });
-}
-
-/* ───────── Webhook processing (DivinityCoin → us) ───────── */
-
+/* ───────── Webhook processing (DivinityCoin → us) ─────────
+   Envelope { event, timestamp, data }; `data.pledgeId` is our reference: an
+   order id, or "sub:<subscriptionId>:<period>" for subscription charges. */
 export async function processDivinityEvent(evt: { id: string; type: string; data: Record<string, unknown> }): Promise<{ status: "processed" | "ignored"; note?: string }> {
   const d = evt.data as DivinityWebhookEvent["data"];
-  const ref = String(d.reference || d.orderId || d.metadata?.orderId || "");
-  const amountCents = typeof d.amount === "number" ? Math.round(d.amount * 100) : undefined;
+  const ref = String(d.pledgeId || "");
+  const amountCents = typeof d.amount === "number" ? Math.round(d.amount) : undefined;
+
+  if (ref && isSubscriptionReference(ref)) return onSubscriptionChargeEvent(evt.type, ref, d);
 
   switch (evt.type) {
-    case "ping": return { status: "ignored", note: "ping" };
+    case "test.ping":
+      return { status: "ignored", note: "ping" };
 
-    case "payment.completed": {
-      if (!ref) return { status: "ignored", note: "no reference" };
+    case "checkout.completed": {
+      if (d.mode === "setup") return onSubscriptionSetupComplete(d);
+      if (!ref) return { status: "ignored", note: "no pledgeId" };
       const order = await prisma.order.findUnique({ where: { id: ref } });
-      if (order) {
-        if (amountCents !== undefined && amountCents < order.totalCents) {
-          await prisma.order.update({ where: { id: order.id }, data: { notes: `Webhook amount ${amountCents} < total ${order.totalCents}` } });
-          return { status: "ignored", note: "amount mismatch" };
-        }
-        await fulfillPaidOrder(order.id, { paymentRef: d.paymentId || d.sessionId, paymentMethod: "divinitycoin_checkout" });
-        return { status: "processed", note: `order #${order.number} paid` };
+      if (!order) return { status: "ignored", note: "unknown order" };
+      /* payment.succeeded carries the authoritative amount; if it already
+         arrived this is a no-op, otherwise settle now and let it re-confirm. */
+      await settleCheckoutPayment(order.id, d.paymentIntentId, amountCents);
+      return { status: "processed", note: `order #${order.number} checkout complete` };
+    }
+
+    case "payment.succeeded": {
+      if (!ref) return { status: "ignored", note: "no pledgeId" };
+      const order = await prisma.order.findUnique({ where: { id: ref } });
+      if (!order) return { status: "ignored", note: "unknown order" };
+      if (amountCents !== undefined && amountCents < order.totalCents) {
+        await prisma.order.update({ where: { id: order.id }, data: { notes: [order.notes, `DivinityCoin paid ${amountCents}¢ but the order total is ${order.totalCents}¢ — check before shipping.`].filter(Boolean).join("\n") } });
+        return { status: "ignored", note: "amount mismatch" };
       }
-      const sub = await prisma.subscription.findUnique({ where: { id: ref } });
-      if (sub) {
-        await activateSubscription(sub.id, { providerRef: d.subscriptionId, amountCents, paymentRef: d.paymentId, periodEnd: d.currentPeriodEnd ? new Date(d.currentPeriodEnd) : undefined });
-        return { status: "processed", note: "subscription activated" };
-      }
-      return { status: "ignored", note: "unknown reference" };
+      await settleCheckoutPayment(order.id, d.paymentIntentId, amountCents);
+      return { status: "processed", note: `order #${order.number} paid` };
     }
 
     case "payment.failed":
-    case "payment.cancelled":
-    case "checkout.expired": {
+    case "checkout.failed":
+    case "checkout.expired":
+    case "checkout.canceled": {
       if (!ref) return { status: "ignored" };
-      await markOrderFailed(ref, `${evt.type}${d.reason ? `: ${d.reason}` : ""}`);
-      await prisma.subscription.updateMany({ where: { id: ref, status: "pending" }, data: { status: "expired" } });
-      return { status: "processed" };
+      const reason = d.error || d.declineCode || d.code || evt.type;
+      await markOrderFailed(ref, `${evt.type}: ${reason}`);
+      return { status: "processed", note: String(reason) };
     }
 
-    case "payment.refunded": {
-      if (!ref) return { status: "ignored" };
-      const order = await prisma.order.findUnique({ where: { id: ref } });
+    case "refund.completed": {
+      if (!ref && !d.paymentIntentId) return { status: "ignored" };
+      const order = ref ? await prisma.order.findUnique({ where: { id: ref } })
+        : await prisma.order.findFirst({ where: { paymentRef: String(d.paymentIntentId) } });
       if (!order) return { status: "ignored", note: "unknown order" };
-      await prisma.order.update({ where: { id: order.id }, data: { status: "refunded", notes: d.reason ? `Refunded: ${d.reason}` : order.notes } });
+      if (d.partial) {
+        await prisma.order.update({ where: { id: order.id }, data: { notes: [order.notes, `Partial refund ${money(amountCents ?? 0)} (${d.refundId ?? "?"})`].filter(Boolean).join("\n") } });
+        return { status: "processed", note: "partial refund noted" };
+      }
+      await prisma.order.update({ where: { id: order.id }, data: { status: "refunded", notes: [order.notes, `Refunded ${money(amountCents ?? order.totalCents)} via DivinityCoin (${d.refundId ?? "?"})`].filter(Boolean).join("\n") } });
       return { status: "processed", note: `order #${order.number} refunded` };
     }
 
-    case "subscription.activated":
-    case "subscription.renewed": {
-      const sub = ref ? await prisma.subscription.findUnique({ where: { id: ref } })
-        : d.subscriptionId ? await prisma.subscription.findUnique({ where: { providerRef: d.subscriptionId } }) : null;
-      if (!sub) return { status: "ignored", note: "unknown subscription" };
-      await activateSubscription(sub.id, {
-        providerRef: d.subscriptionId, amountCents, paymentRef: d.paymentId,
-        periodStart: d.periodStart ? new Date(d.periodStart) : undefined,
-        periodEnd: d.periodEnd ? new Date(d.periodEnd) : d.currentPeriodEnd ? new Date(d.currentPeriodEnd) : undefined,
-      });
-      return { status: "processed" };
-    }
-
-    case "subscription.payment_failed": {
-      const sub = ref ? await prisma.subscription.findUnique({ where: { id: ref }, include: { user: true } })
-        : d.subscriptionId ? await prisma.subscription.findUnique({ where: { providerRef: d.subscriptionId }, include: { user: true } }) : null;
-      if (!sub) return { status: "ignored" };
-      await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } });
-      await prisma.subscriptionInvoice.create({ data: { subscriptionId: sub.id, amountCents: amountCents ?? sub.priceCents, status: "failed", periodStart: new Date(), periodEnd: sub.currentPeriodEnd ?? new Date(), paymentRef: d.paymentId ?? null } });
-      await sendTemplate("subscription_payment_failed", sub.user.email, { subject: "We couldn’t renew your Play Time subscription", fallbackText: "Your renewal payment failed. Update your payment on DivinityCoin to keep playing.", name: sub.user.name }, { userId: sub.userId });
-      return { status: "processed" };
-    }
-
-    case "subscription.cancelled": {
-      const sub = ref ? await prisma.subscription.findUnique({ where: { id: ref }, include: { user: true } })
-        : d.subscriptionId ? await prisma.subscription.findUnique({ where: { providerRef: d.subscriptionId }, include: { user: true } }) : null;
-      if (!sub) return { status: "ignored" };
-      await prisma.subscription.update({ where: { id: sub.id }, data: { status: "cancelled", cancelledAt: new Date() } });
-      await sendTemplate("subscription_cancelled", sub.user.email, { subject: "Your Play Time subscription was cancelled", fallbackText: "Your subscription is cancelled. Your cards stay in your collection.", name: sub.user.name }, { userId: sub.userId });
-      return { status: "processed" };
+    case "dispute.created": {
+      const pi = String(d.stripePaymentIntentId || d.paymentIntentId || "");
+      const order = ref ? await prisma.order.findUnique({ where: { id: ref } })
+        : pi ? await prisma.order.findFirst({ where: { paymentRef: pi } }) : null;
+      if (!order) return { status: "ignored", note: "unknown order" };
+      const note = `⚠ Chargeback opened ${new Date().toISOString().slice(0, 10)} — ${d.reason ?? "no reason"} (${d.disputeId ?? "?"}). Evidence due ${d.evidenceDueBy ?? "?"}. Do not ship.`;
+      await prisma.order.update({ where: { id: order.id }, data: { status: "disputed", notes: [order.notes, note].filter(Boolean).join("\n") } });
+      const s = await getSettings(["SUPPORT_EMAIL", "MAIL_BCC_ADMIN"]);
+      const to = s.MAIL_BCC_ADMIN || s.SUPPORT_EMAIL;
+      if (to) await sendTemplate("admin_dispute", to, { subject: `Chargeback on order #${order.number}`, fallbackText: `${note}\nOrder: /admin/orders/${order.id}`, orderNumber: String(order.number), reason: String(d.reason ?? ""), amount: money(amountCents ?? order.totalCents) }, { orderId: order.id }).catch(() => {});
+      return { status: "processed", note: `order #${order.number} disputed` };
     }
 
     default:
-      return { status: "ignored", note: `unhandled type ${evt.type}` };
+      return { status: "ignored", note: `unhandled event ${evt.type}` };
   }
+}
+
+/* A hosted-checkout charge lands on DivinityCoin as credits held under our
+   order id. Capture the hold so it settles to us, then fulfil. Idempotent. */
+async function settleCheckoutPayment(orderId: string, paymentIntentId: string | undefined, amountCents: number | undefined) {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) return;
+  if (!["paid", "fulfilled", "shipped", "refunded", "disputed"].includes(order.status)) {
+    try {
+      const cap = await divinitycoin.captureHold(order.id);
+      if (!cap.success) console.warn(`[divinitycoin] capture for order ${order.id} not confirmed:`, cap.error || cap.message);
+    } catch (err) {
+      /* The card was charged either way; capture can be retried from Admin → Webhooks. */
+      console.error(`[divinitycoin] capture failed for order ${order.id}:`, err);
+    }
+  }
+  await fulfillPaidOrder(order.id, { paymentRef: paymentIntentId || order.paymentRef || undefined, paymentMethod: "divinitycoin_checkout" });
+  void amountCents;
+}
+
+/* Success-page self-heal: confirm a hosted checkout with DivinityCoin when
+   the shopper is back before the webhook. Idempotent. */
+export async function confirmCheckoutSession(orderId: string, sessionId: string): Promise<boolean> {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) return false;
+  if (["paid", "fulfilled", "shipped"].includes(order.status)) return true;
+  if (!sessionId.startsWith("cs_") || sessionId.startsWith("cs_test_")) return false;
+  const sess = await divinitycoin.getCheckoutSession(sessionId);
+  if (!sess || sess.pledgeId !== order.id || sess.status !== "complete") return false;
+  if (sess.amount !== null && sess.amount < order.totalCents) return false;
+  await settleCheckoutPayment(order.id, sess.paymentIntentId ?? undefined, sess.amount ?? undefined);
+  return true;
 }

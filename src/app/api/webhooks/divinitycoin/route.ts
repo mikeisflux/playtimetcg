@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { prisma } from "@/lib/db";
 import { verifyWebhookSignature } from "@/lib/divinitycoin";
 import { processDivinityEvent } from "@/lib/orders";
@@ -6,26 +7,31 @@ import { processDivinityEvent } from "@/lib/orders";
 export const runtime = "nodejs";
 
 /* DivinityCoin → Play Time webhook.
-   Configure on DivinityCoin:  https://playtimetcg.com/api/webhooks/divinitycoin
-   Header: X-DivinityCoin-Signature: t=<unix>,v1=<hmac-sha256 hex of "<t>.<raw body>">
-   Body:   { id, type, created, data: { reference, amount, paymentId, ... } }
-   Idempotent on (provider, event id). Always answers 200 for a verified event
-   so DivinityCoin doesn't retry forever; processing errors are stored on the
-   WebhookEvent row and can be re-run from Admin → Webhooks. */
+   Registered on DivinityCoin as the partner webhook URL:
+       https://playtimetcg.com/api/webhooks/divinitycoin
+   Header: X-Webhook-Signature: t=<unix>,v1=<hmac-sha256 hex of "<t>.<raw body>">
+   Body:   { event, timestamp, data: { pledgeId, paymentIntentId, amount(cents), … } }
+   DivinityCoin retries up to three times on a non-2xx, so deliveries are
+   deduplicated on (provider, event id) derived from the event name and the
+   object it concerns. Always answers 200 for a verified event; processing
+   errors are stored on the WebhookEvent row and can be re-run from Admin →
+   Webhooks. */
 export async function POST(req: Request) {
   const raw = await req.text();
-  const sig = req.headers.get("x-divinitycoin-signature") || req.headers.get("x-signature") || req.headers.get("x-webhook-signature");
+  const sig = req.headers.get("x-webhook-signature") || req.headers.get("x-divinitycoin-signature") || req.headers.get("x-signature");
   const verified = await verifyWebhookSignature(raw, sig);
   if (!verified.ok) {
     console.warn("divinitycoin webhook rejected:", verified.reason);
     return NextResponse.json({ error: `invalid signature: ${verified.reason}` }, { status: 401 });
   }
 
-  let evt: { id?: string; type?: string; event?: string; data?: Record<string, unknown> };
+  let evt: { id?: string; type?: string; event?: string; timestamp?: string; data?: Record<string, unknown> };
   try { evt = JSON.parse(raw); } catch { return NextResponse.json({ error: "invalid JSON" }, { status: 400 }); }
-  const type = String(evt.type || evt.event || "");
-  const id = String(evt.id || `${type}:${JSON.stringify(evt.data ?? {}).slice(0, 200)}`);
-  if (!type) return NextResponse.json({ error: "missing type" }, { status: 400 });
+  const type = String(evt.event || evt.type || "");
+  if (!type) return NextResponse.json({ error: "missing event" }, { status: 400 });
+  const d = (evt.data ?? {}) as Record<string, unknown>;
+  const subject = evt.id || d.disputeId || d.refundId || d.paymentIntentId || d.sessionId || d.setupIntentId || d.pledgeId || evt.timestamp || createHash("sha256").update(raw).digest("hex").slice(0, 24);
+  const id = `${type}:${String(subject)}`;
 
   let row;
   try {

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { divinitycoin } from "@/lib/divinitycoin";
-import { getSettings } from "@/lib/settings";
 import { sendTemplate } from "@/lib/sendgrid";
+import { cancelSubscription, resumeSubscriptionSetup } from "@/lib/subscriptions";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -20,12 +19,8 @@ export async function POST(req: Request) {
     const sub = await prisma.subscription.findFirst({ where: { id: String(id), userId: user.id } });
     if (!sub) return NextResponse.json({ error: "Subscription not found." }, { status: 404 });
     if (action === "cancel") {
-      if (sub.providerRef) {
-        const r = await divinitycoin.cancelSubscription(sub.providerRef);
-        if (!r.success) return NextResponse.json({ error: r.error || "DivinityCoin could not cancel the subscription. Try again or contact us." }, { status: 502 });
-      }
-      /* stays active until the period ends; the webhook or the period end flips it */
-      await prisma.subscription.update({ where: { id: sub.id }, data: { cancelAtPeriodEnd: true, cancelledAt: new Date(), ...(sub.currentPeriodEnd && sub.currentPeriodEnd < new Date() ? { status: "cancelled" } : {}) } });
+      /* stays active until the period ends; the renewal run then closes it */
+      await cancelSubscription(sub.id, sub.status === "pending");
       await sendTemplate("subscription_cancelled", user.email, { subject: "Your Play Time subscription was cancelled", fallbackText: "Your subscription will end at the close of the current period. Your cards stay in your collection.", name: user.name }, { userId: user.id });
       return NextResponse.json({ ok: true });
     }
@@ -35,16 +30,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
     if (action === "resume" && sub.status === "pending") {
-      const product = await prisma.product.findFirst({ where: { kind: "subscription", subPlan: sub.plan, active: true } });
-      const s = await getSettings(["SITE_URL", "SITE_NAME"]);
-      const base = (s.SITE_URL || "https://playtimetcg.com").replace(/\/$/, "");
-      const r = await divinitycoin.createSubscriptionCheckout({
-        subscriptionId: sub.id, plan: sub.plan, amount: sub.priceCents / 100, interval: (sub.interval as "month" | "year") || "month",
-        email: user.email, customerId: user.id, description: `${s.SITE_NAME || "Play Time"} — ${product?.name ?? sub.plan}`,
-        successUrl: `${base}/account/subscriptions?started=${sub.id}`, cancelUrl: `${base}/account/subscriptions?cancelled=${sub.id}`,
-      });
-      if (!r.success || !r.checkoutUrl) return NextResponse.json({ error: r.error || "Could not start checkout." }, { status: 502 });
-      return NextResponse.json({ ok: true, url: r.checkoutUrl });
+      try { return NextResponse.json({ ok: true, url: await resumeSubscriptionSetup(sub.id, user.id) }); }
+      catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : "Could not start checkout." }, { status: 502 }); }
     }
     return NextResponse.json({ error: "Unknown action." }, { status: 400 });
   } catch (err) {
