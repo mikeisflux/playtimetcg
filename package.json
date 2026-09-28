@@ -2,7 +2,7 @@
   "name": "playtimetcg",
   "version": "1.0.0",
   "private": true,
-  "description": "Play Time — adult card game for couples: storefront, online play, admin. Next.js 16 + Prisma 7/PostgreSQL",
+  "description": "Play Time \u2014 adult card game for couples: storefront, online play, admin. Next.js 16 + Prisma 7/PostgreSQL",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +12,8 @@
     "db:seed": "node --experimental-strip-types prisma/seed.mjs",
     "setup": "prisma generate && prisma db push && npm run db:seed",
     "typecheck": "tsc --noEmit",
-    "cards:import": "node --experimental-strip-types scripts/import-card-art.mjs"
+    "cards:import": "node --experimental-strip-types scripts/import-card-art.mjs",
+    "backs:import": "node --experimental-strip-types scripts/import-card-backs.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
@@ -33,5 +34,7 @@
     "prisma": "7.10.0",
     "typescript": "^7.0.2"
   },
-  "engines": { "node": ">=22.12" }
+  "engines": {
+    "node": ">=22.12"
+  }
 }

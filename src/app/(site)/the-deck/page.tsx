@@ -37,7 +37,7 @@ export default async function TheDeck() {
         <div className="stack gap-12" style={{ maxWidth: 760 }}>
           <div className="eyebrow" style={{ color: "#A68CF5" }}>The deck</div>
           <h1 className="t-h2">Seven categories. One die.</h1>
-          <p className="t-lead" style={{ marginTop: 8 }}>Cool colors are gentler, hot colors are bolder, and the die decides which pile you draw from. Every card tells you its category, its spice level and roughly how long it takes before you say yes.</p>
+          <p className="t-lead" style={{ marginTop: 8 }}>Cool colors are gentler, hot colors are bolder. Every back is printed in its category color with its die numbers: one shuffled deck, roll, take the first back that matches. Every card tells you its category, its spice level and roughly how long it takes before you say yes.</p>
           <div className="label" style={{ fontSize: 12, marginTop: 8 }}>{legend}</div>
         </div>
       </section>

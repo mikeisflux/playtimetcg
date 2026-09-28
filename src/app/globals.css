@@ -489,3 +489,16 @@ select.input { appearance: none; }
   .admMailCompose { right: 0; width: 100vw; height: 100vh; border: 0; }
   .admMailCompose__line { grid-template-columns: 48px minmax(0, 1fr) auto; }
 }
+
+/* ── Colored card backs (one per category, die numbers printed on) ── */
+.card--back-color .card__back { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #0d0b10; text-align: center; padding: 12px; }
+.card__back-brand { font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; }
+.card__back-roll { font-family: var(--font-display); font-weight: 900; font-size: 44px; line-height: 1; letter-spacing: -0.02em; }
+.card__back-cat { font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; font-size: 12px; }
+.card--sm .card__back-roll { font-size: 26px; }
+.card--sm .card__back-brand, .card--sm .card__back-cat { font-size: 8px; }
+.deckfan { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-end; }
+.deckfan__card { width: 26px; height: 38px; border: 2px solid rgba(13,11,16,0.35); background: var(--c); opacity: 0.55; transition: opacity 120ms, transform 120ms; }
+.deckfan__card.on { opacity: 1; }
+.deckfan__card.pick { opacity: 1; transform: translateY(-8px); outline: 2px solid var(--text-strong); }
+@media (max-width: 600px) { .deckfan__card { width: 16px; height: 24px; } }

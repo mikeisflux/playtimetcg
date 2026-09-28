@@ -4,16 +4,18 @@
    `reduce` on the server so both players see the same thing.
 
    Rulebook points encoded here:
-   - Roll → draw (one, or two-keep-one; the other slides back into its pile)
-     → read out loud → answer.
+   - One shuffled deck. Every back is printed in its category color with its
+     die numbers: roll, then take the FIRST card in the deck whose back
+     matches. Nothing is sorted and nobody sees a card before it's drawn.
+   - Read out loud → answer.
    - Do it / Tweak it: card goes to Played and the partner becomes the roller.
    - Save it: card goes to Saved and the SAME roller rolls again.
-   - Pass: card goes back to the bottom of its pile; same roller rolls again.
-     No limit on passes.
+   - Pass: card goes to the bottom of the deck, face down; same roller rolls
+     again. No limit on passes (two in a row: step down a category).
    - 11 Focus on You: before drawing, the roller decides who receives.
-   - 12 Free Play: draws from the four Free Play cards; once that pile is
-     empty, a 12 means the roller picks any card from any pile.
-   - Empty pile: roll again, or step one category up the ramp.
+   - 12 Free Play: the first Free Play back in the deck; once all four are
+     out, a 12 means the roller picks any card in the deck (Dealer's Choice).
+   - No match left: roll again, or step one category up the ramp.
    - Stop means stop: either player ends the night at any moment. */
 import { CATEGORIES, categoryForRoll, type Category } from "./content";
 
@@ -34,6 +36,9 @@ export type Phase = "lobby" | "roll" | "focus" | "draw" | "read" | "answer" | "e
 export type Answer = "do" | "tweak" | "save" | "pass";
 export type SpecialMode = "focus" | "free" | "dealer" | null;
 
+/* A face-down card in the deck: only its back (category) is visible. */
+export interface DeckSlot { code: string; category: Category | string }
+
 export interface GameState {
   phase: Phase;
   players: PlayerState[];
@@ -42,13 +47,14 @@ export interface GameState {
   roll: number | null;
   rolling: boolean;
   category: Category | null;
-  hand: GameCardRef[];          // 1 or 2 drawn cards (draw two, keep one)
+  hand: GameCardRef[];          // the drawn card (kept for compatibility)
   current: GameCardRef | null;
   piles: { played: GameCardRef[]; saved: GameCardRef[]; retired: GameCardRef[] };
-  deckCounts: Record<string, number>; // remaining per category, under the ceiling
-  drawn: string[];              // codes out of the piles right now (played or in hand)
+  deck: DeckSlot[];             // the shuffled deck, top first — backs only
+  deckCounts: Record<string, number>; // remaining per category (derived from deck)
+  drawn: string[];              // codes out of the deck right now
   passStreak: number;           // passes in a row (two is information, not failure)
-  emptyPile: boolean;           // the rolled pile has nothing left under the ceiling
+  emptyPile: boolean;           // no back matching the roll is left in the deck
   log: Array<{ t: number; who: string; text: string }>;
   turn: number;
   endedAt?: number;
@@ -64,6 +70,7 @@ export function newGame(host: { userId: string; name: string }): GameState {
     roll: null, rolling: false, category: null,
     hand: [], current: null,
     piles: { played: [], saved: [], retired: [] },
+    deck: [],
     deckCounts: Object.fromEntries(CATEGORIES.map((c) => [c, 0])),
     drawn: [],
     passStreak: 0,
@@ -80,13 +87,12 @@ export type Action =
   | { type: "setCeiling"; userId: string; ceiling: number }
   | { type: "setVetoes"; userId: string; vetoes: string[] }
   | { type: "ready"; userId: string; ready: boolean }
-  | { type: "start"; userId: string }
+  | { type: "start"; userId: string; deck: DeckSlot[] }        // server supplies the shuffled deck
   | { type: "roll"; userId: string; n: number }
   | { type: "chooseReceiver"; userId: string; receiver: "roller" | "partner" }
   | { type: "reroll"; userId: string }
   | { type: "stepUp"; userId: string }
-  | { type: "draw"; userId: string; cards: GameCardRef[] }   // server supplies cards
-  | { type: "keep"; userId: string; code: string }
+  | { type: "draw"; userId: string; card: GameCardRef }        // server resolves the first matching back
   | { type: "read"; userId: string }
   | { type: "answer"; userId: string; answer: Answer }
   | { type: "playSaved"; userId: string; code: string }
@@ -101,8 +107,34 @@ const log = (s: GameState, who: string, text: string) => {
   s.log = [...s.log.slice(-60), { t: Date.now(), who, text }];
 };
 
+export function countDeck(deck: DeckSlot[]): Record<string, number> {
+  const out: Record<string, number> = Object.fromEntries(CATEGORIES.map((c) => [c, 0]));
+  for (const d of deck) out[d.category] = (out[d.category] ?? 0) + 1;
+  return out;
+}
+
+/* Index of the first card in the deck whose back matches the category. */
+export function firstMatch(deck: DeckSlot[], category: string): number {
+  return deck.findIndex((d) => d.category === category);
+}
+
+function refreshDeck(s: GameState) {
+  s.deckCounts = countDeck(s.deck);
+}
+
 function clearTable(s: GameState) {
   s.current = null; s.hand = []; s.roll = null; s.category = null; s.specialMode = null; s.receiverIndex = null; s.emptyPile = false;
+}
+
+/* After a roll or a step up: is there a matching back? A 12 with no Free
+   Play left becomes Dealer's Choice. */
+function settleTarget(s: GameState) {
+  if (!s.category) return;
+  if (s.category === "Free Play") {
+    if (firstMatch(s.deck, "Free Play") < 0) { s.specialMode = "dealer"; s.emptyPile = s.deck.length === 0; return; }
+    s.specialMode = "free"; s.emptyPile = false; return;
+  }
+  s.emptyPile = firstMatch(s.deck, s.category) < 0;
 }
 
 export function reduce(prev: GameState, a: Action): GameState {
@@ -110,6 +142,7 @@ export function reduce(prev: GameState, a: Action): GameState {
   if (s.passStreak === undefined) s.passStreak = 0;
   if (s.emptyPile === undefined) s.emptyPile = false;
   if (s.receiverIndex === undefined) s.receiverIndex = null;
+  if (!Array.isArray(s.deck)) s.deck = [];
   const me = s.players.find((p) => p.userId === ("userId" in a ? a.userId : ""));
   const roller = s.players[s.rollerIndex];
   const isRoller = !!me && roller?.userId === me.userId;
@@ -133,11 +166,13 @@ export function reduce(prev: GameState, a: Action): GameState {
     }
     case "setCeiling": {
       if (!me) throw new Error("Not in this room.");
+      if (s.phase !== "lobby") throw new Error("The ceiling is set before the first roll.");
       me.ceiling = Math.max(1, Math.min(5, Math.round(a.ceiling)));
       return s;
     }
     case "setVetoes": {
       if (!me) throw new Error("Not in this room.");
+      if (s.phase !== "lobby") throw new Error("Vetoes are pulled before the first roll.");
       me.vetoes = a.vetoes.slice(0, 200);
       return s;
     }
@@ -150,9 +185,13 @@ export function reduce(prev: GameState, a: Action): GameState {
       if (s.phase !== "lobby") return s;
       if (s.players.length < 2) throw new Error("You need two players.");
       if (!s.players.every((p) => p.ready)) throw new Error("Both players must be ready.");
+      if (!a.deck.length) throw new Error("There are no cards to play under tonight’s ceiling.");
+      s.deck = a.deck;
+      s.drawn = [];
+      refreshDeck(s);
       s.phase = "roll";
       s.turn = 1;
-      log(s, "system", `Ceiling set to ${ceilingFor(s)}/5. ${roller.name} rolls first.`);
+      log(s, "system", `One deck of ${s.deck.length} cards shuffled. Ceiling ${ceilingFor(s)}/5. ${roller.name} rolls first.`);
       return s;
     }
     case "roll": {
@@ -163,18 +202,20 @@ export function reduce(prev: GameState, a: Action): GameState {
       const face = categoryForRoll(n);
       s.category = face.category;
       s.hand = [];
-      s.emptyPile = false;
       s.receiverIndex = null;
+      s.specialMode = null;
+      settleTarget(s);
       if (n === 11) { s.specialMode = "focus"; s.phase = "focus"; }
-      else if (n === 12) { s.specialMode = (s.deckCounts["Free Play"] ?? 0) > 0 ? "free" : "dealer"; s.phase = "draw"; }
-      else { s.specialMode = null; s.phase = "draw"; }
-      log(s, roller.name, `rolled ${n} — ${face.category}${s.specialMode === "dealer" ? " (Free Play pile is empty: pick any card)" : ""}.`);
+      else s.phase = "draw";
+      const mode = s.specialMode as SpecialMode;
+      log(s, roller.name, `rolled ${n} — ${face.category}${mode === "dealer" ? " (all four Free Play cards are out: pick any card in the deck)" : s.emptyPile ? " — no matching back left" : ""}.`);
       return s;
     }
     case "chooseReceiver": {
       if (s.phase !== "focus") throw new Error("Nothing to decide.");
       if (!isRoller) throw new Error("The roller decides who receives.");
       s.receiverIndex = a.receiver === "roller" ? s.rollerIndex : (s.rollerIndex + 1) % s.players.length;
+      s.specialMode = "focus";
       s.phase = "draw";
       log(s, roller.name, `decided: ${s.players[s.receiverIndex].name} receives.`);
       return s;
@@ -196,34 +237,25 @@ export function reduce(prev: GameState, a: Action): GameState {
       const next = CATEGORIES[Math.min(CATEGORIES.length - 1, i + 1)];
       if (next === s.category) throw new Error("Nowhere higher to go — roll again.");
       s.category = next;
-      s.specialMode = next === "Free Play" ? ((s.deckCounts["Free Play"] ?? 0) > 0 ? "free" : "dealer") : null;
-      s.emptyPile = false;
+      s.specialMode = null;
+      settleTarget(s);
       log(s, roller.name, `stepped up the ramp to ${next}.`);
       return s;
     }
     case "draw": {
       if (s.phase !== "draw") throw new Error("Not time to draw.");
       if (!isRoller) throw new Error("It isn’t your draw.");
-      if (!a.cards.length) throw new Error("That pile is empty. Roll again or step up the ramp.");
-      s.hand = a.cards.slice(0, 2);
-      s.drawn.push(...s.hand.map((c) => c.code));
+      const idx = s.deck.findIndex((d) => d.code === a.card.code);
+      if (idx < 0) throw new Error("That card isn’t in the deck.");
+      if (s.specialMode !== "dealer" && s.category && s.deck[idx].category !== s.category) throw new Error("That back doesn’t match the roll.");
+      s.deck.splice(idx, 1);
+      s.drawn.push(a.card.code);
+      refreshDeck(s);
+      s.hand = [a.card];
+      s.current = a.card;
       s.emptyPile = false;
-      if (s.hand.length === 1) { s.current = s.hand[0]; s.phase = "read"; }
-      log(s, roller.name, s.hand.length === 2 ? "drew two." : `drew ${s.hand[0].title}.`);
-      return s;
-    }
-    case "keep": {
-      if (s.phase !== "draw" || s.hand.length < 2) throw new Error("Nothing to choose.");
-      if (!isRoller) throw new Error("It isn’t your choice.");
-      const keep = s.hand.find((c) => c.code === a.code);
-      if (!keep) throw new Error("That card isn’t in your hand.");
-      const other = s.hand.find((c) => c.code !== a.code);
-      /* the other card slides to the bottom of its pile */
-      if (other) s.drawn = s.drawn.filter((code) => code !== other.code);
-      s.current = keep;
-      s.hand = [keep];
       s.phase = "read";
-      log(s, roller.name, `kept ${keep.title}.`);
+      log(s, roller.name, s.specialMode === "dealer" ? `picked ${a.card.title} from the deck.` : `drew ${a.card.title}.`);
       return s;
     }
     case "read": {
@@ -251,10 +283,12 @@ export function reduce(prev: GameState, a: Action): GameState {
         s.passStreak = 0;
         log(s, me.name, `saved “${c.title}” for later. ${roller.name} rolls again.`);
       } else {
-        /* pass: back to the bottom of its pile, no penalty, same roller */
+        /* pass: to the bottom of the deck, face down, no penalty, same roller */
+        s.deck.push({ code: c.code, category: c.category });
         s.drawn = s.drawn.filter((code) => code !== c.code);
+        refreshDeck(s);
         s.passStreak += 1;
-        log(s, me.name, `passed on “${c.title}”. ${roller.name} rolls again.${s.passStreak >= 2 ? " Two passes in a row: maybe step down a category." : ""}`);
+        log(s, me.name, `passed on “${c.title}” — it goes to the bottom of the deck. ${roller.name} rolls again.${s.passStreak >= 2 ? " Two passes in a row: maybe step down a category." : ""}`);
       }
       clearTable(s);
       s.phase = "roll";
@@ -285,9 +319,14 @@ export function reduce(prev: GameState, a: Action): GameState {
 
 export function publicState(s: GameState, viewerId: string): GameState {
   /* nothing is hidden between two consenting players except the other
-     player's vetoes (that list is private by design) */
+     player's vetoes (that list is private by design); the deck is shown as
+     backs only — codes are stripped so the fronts stay unknown until drawn */
+  const roller = s.players[s.rollerIndex];
+  /* Dealer's Choice: the roller looks through the whole deck, so they see codes */
+  const reveal = s.phase === "draw" && s.specialMode === "dealer" && roller?.userId === viewerId;
   return {
     ...s,
+    deck: (s.deck ?? []).map((d) => ({ code: reveal ? d.code : "", category: d.category })),
     players: s.players.map((p) => (p.userId === viewerId ? p : { ...p, vetoes: [] })),
   };
 }

@@ -1,5 +1,5 @@
 /* Small shared visual primitives (server-safe). */
-import { RAMP, CATEGORY_COLORS, rarityFrame, type CardData } from "@/lib/content";
+import { RAMP, DIE, CATEGORY_COLORS, rarityFrame, type CardData } from "@/lib/content";
 
 export function RampStrip({ h = 4 }: { h?: number }) {
   return (
@@ -56,9 +56,29 @@ export function GameCard({ card, setName = "Base", small, imageUrl, className = 
   );
 }
 
-export function CardBack({ small }: { small?: boolean }) {
+/* A card back. With a category it is that category's colored back (the
+   printed artwork when rendered, else a CSS stand-in with the die numbers);
+   without one, the neutral Play Time back. */
+export function CardBack({ small, category, art, className = "" }: { small?: boolean; category?: string; art?: string | null; className?: string }) {
+  const face = category ? DIE.find((d) => d.category === category) : undefined;
+  if (face) {
+    return (
+      <div className={`card card--back card--back-color${small ? " card--sm" : ""} ${className}`} style={{ "--frame": face.color, "--c": face.color } as React.CSSProperties} aria-label={`${face.category} card back, roll ${face.label}`}>
+        {art ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <div className="card__in"><img src={art} alt={`${face.category} card back`} draggable={false} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /></div>
+        ) : (
+          <div className="card__in card__back" style={{ background: face.color }}>
+            <div className="card__back-brand">Play Time</div>
+            <div className="card__back-roll">{face.label}</div>
+            <div className="card__back-cat">{face.category}</div>
+          </div>
+        )}
+      </div>
+    );
+  }
   return (
-    <div className={`card card--back${small ? " card--sm" : ""}`} style={{ "--frame": "rgba(255,255,255,0.28)" } as React.CSSProperties}>
+    <div className={`card card--back${small ? " card--sm" : ""} ${className}`} style={{ "--frame": "rgba(255,255,255,0.28)" } as React.CSSProperties}>
       <div className="card__in"><div className="wordmark" style={{ fontSize: small ? 14 : 20 }}>Play Time</div></div>
     </div>
   );

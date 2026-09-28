@@ -21,7 +21,7 @@ const BLOCKS: Block[] = [
     id: "setup", eyebrow: "Before the first roll", title: "Setting up", color: "#3FD6C8",
     lead: "Two minutes the first time. Thirty seconds every time after.",
     rows: [
-      { title: "Sort the deck", body: "Split the cards into seven piles by category color. Shuffle each pile and set it face down. The die tells you which pile to draw from." },
+      { title: "Shuffle one deck", body: "Shuffle every card together into one face-down deck. Each back is printed in its category color with its die numbers, so there’s nothing to sort and nobody sees a card before it’s drawn." },
       { title: "Set your ceiling", body: "Agree on the highest Spice level you’re playing tonight. Anything above it stays in the box. The three All In cards stay out unless you both ask for them." },
       { title: "Pull your vetoes", body: "Either of you can take any card out before you start. No reason needed. It’s out for tonight, not forever." },
       { title: "Make room for three piles", body: "Played, Saved and Retired. Every card you draw ends the night in one of them." },
@@ -32,8 +32,8 @@ const BLOCKS: Block[] = [
     id: "turn", eyebrow: "Turn by turn", title: "A full turn", color: "#5AB8F0",
     lead: "Every turn has two roles. The roller rolls and reads. The partner answers. If a card says to roll the die or set a timer, do it — the numbers are part of the card.",
     rows: [
-      { title: "Roll", body: "The number picks the pile. 1–2 Soft Touch, 3–4 Flirty Fun, 5–6 Classic Heat, 7–8 Turn It Up, 9–10 Wild Card, 11 Focus on You, 12 Free Play." },
-      { title: "Draw", body: "Take the top card. Want a choice? Draw two, keep one, and slide the other to the bottom of its pile." },
+      { title: "Roll", body: "The number picks a color. Every card back shows its color and die numbers: 1–2 Soft Touch, 3–4 Flirty Fun, 5–6 Classic Heat, 7–8 Turn It Up, 9–10 Wild Card, 11 Focus on You, 12 Free Play." },
+      { title: "Draw", body: "Fan the deck face down. Take the first card whose back matches." },
       { title: "Read it out loud", body: "Every word, exactly as written. Saying it is half of it." },
       { title: "Get an answer", body: "Do it, tweak it, save it, or pass. Either of you can pass. See The Four Answers." },
       { title: "Play it", body: "Unless the card says otherwise, “you” means the roller and “your partner” means the other one. The time on the card is a floor. Keep going as long as it’s working." },
@@ -47,7 +47,7 @@ const BLOCKS: Block[] = [
       { title: "Do it", body: "Play the card as written. The default, and usually the right call." },
       { title: "Tweak it", body: "Change one detail, like the place, the pace or the part that doesn’t work, and play the rest. Agree on the change before you start, not halfway through." },
       { title: "Save it", body: "You both want it, just not now. It goes on the Saved pile. Cards that need a morning, a car, a date or a hotel go here automatically, and the roller rolls again." },
-      { title: "Pass", body: "Either of you, any card, no reason. It goes to the bottom of its pile and the same roller rolls again. There is no limit on passes." },
+      { title: "Pass", body: "Either of you, any card, no reason. It goes to the bottom of the deck, face down, and the same roller rolls again. There is no limit on passes." },
     ],
   },
   {
@@ -55,9 +55,9 @@ const BLOCKS: Block[] = [
     lead: "Your ceiling applies to every special roll. Dealer’s Choice can’t pick a card you left in the box.",
     rows: [
       { title: "11 · Focus on You", body: "Before drawing, the roller decides who receives: themselves or their partner. The receiver doesn’t reciprocate, doesn’t hurry and doesn’t apologize. The card ends when they say so." },
-      { title: "12 · Free Play", body: "Four cards that hand the night back to you. Dealer’s Choice: the roller looks through every pile and picks one card. Double Draw: roll twice, take one card from each pile and combine them. Reverse Roles: roll again; on that card, the partner does what the roller would have done. Free Play Create: invent something together, right now." },
-      { title: "All four played?", body: "Once the Free Play pile is empty, a 12 means the roller picks any card from any pile." },
-      { title: "Empty pile", body: "Roll again, or step one category up the ramp. Focus on You has only six cards, so it usually runs out first." },
+      { title: "12 · Free Play", body: "Four cards that hand the night back to you. Dealer’s Choice: the roller looks through the whole deck and picks one card. Double Draw: roll twice, take the first match for each roll and combine them. Reverse Roles: roll again; on that card, the partner does what the roller would have done. Free Play Create: invent something together, right now." },
+      { title: "All four played?", body: "Once all four yellow Free Play cards are out of the deck, a 12 means the roller picks any card in the deck." },
+      { title: "No match left", body: "Roll again, or step one category up the ramp. Focus on You has only six cards, so it usually runs out first." },
     ],
   },
   {
@@ -69,7 +69,7 @@ const BLOCKS: Block[] = [
       { title: "You’re both done", body: "The most common ending, and the best one." },
       { title: "The last five minutes", body: "Stay in the room. Water, closeness, a little talking." },
       { title: "One keep, one retire", body: "Each of you names one card from tonight you’d play again, and one you never need to see. Retired cards go back in the box apart from the deck, until you both want them back." },
-      { title: "Reset", body: "Shuffle Played cards back into their piles. Keep the Saved pile on top of the box. Next time, start by drawing from it instead of rolling." },
+      { title: "Reset", body: "Shuffle Played cards back into the deck. Keep the Saved pile on top of the box. Next time, start by drawing from it instead of rolling." },
     ],
   },
   {

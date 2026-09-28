@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { hasOnlineAccess } from "@/lib/packs";
-import { ceilingFor, reduce, type GameCardRef, type GameState, type Phase } from "@/lib/game";
+import { ceilingFor, reduce, type DeckSlot, type GameCardRef, type GameState, type Phase } from "@/lib/game";
 import type { GameRoom, User } from "@/generated/prisma/client";
 import type { CollectionItem, PackItem } from "@/components/play/types";
 
@@ -46,21 +46,38 @@ export async function joinRoom(room: GameRoom, user: { id: string; name: string 
   return fresh ? { ok: true, room: fresh } : { ok: false, error: "Room vanished." };
 }
 
-/* The roller's playable cards for the current night: their collection, under
-   the shared ceiling, minus both players' vetoes and anything already drawn. */
-export async function playablePool(state: GameState): Promise<GameCardRef[]> {
-  const roller = state.players[state.rollerIndex];
-  if (!roller) return [];
+/* Every card the two of them can play tonight: the ROLLER's collection at
+   the moment the deck is built, under the shared ceiling, minus both
+   players' vetoes. Returned as full card refs. */
+export async function playablePool(state: GameState, userId?: string): Promise<GameCardRef[]> {
+  const owner = userId ?? state.players[state.rollerIndex]?.userId;
+  if (!owner) return [];
   const vetoed = new Set(state.players.flatMap((p) => p.vetoes));
-  const drawn = new Set(state.drawn);
   const owned = await prisma.userCard.findMany({
-    where: { userId: roller.userId, card: { active: true, spice: { lte: ceilingFor(state) } } },
+    where: { userId: owner, card: { active: true, spice: { lte: ceilingFor(state) } } },
     include: { card: true },
   });
   return owned
     .map((o) => o.card)
-    .filter((c) => !vetoed.has(c.code) && !drawn.has(c.code))
-    .map((c) => ({ code: c.code, title: c.title, category: c.category, rarity: c.rarity, spice: c.spice, time: c.time, text: c.text, art: c.imageUrl ? `/api/cards/art/${c.code}` : null }));
+    .filter((c) => !vetoed.has(c.code))
+    .map(toRef);
+}
+
+export const toRef = (c: { code: string; title: string; category: string; rarity: string; spice: number; time: string; text: string; imageUrl: string | null }): GameCardRef =>
+  ({ code: c.code, title: c.title, category: c.category, rarity: c.rarity, spice: c.spice, time: c.time, text: c.text, art: c.imageUrl ? `/api/cards/art/${c.code}` : null });
+
+/* One shuffled deck of face-down backs for the night (rulebook: shuffle
+   every card together; nobody sees a card before it's drawn). Built from
+   the host's collection so both players play the same deck all night. */
+export async function buildDeck(state: GameState): Promise<DeckSlot[]> {
+  const host = state.players[0];
+  const pool = await playablePool(state, host?.userId);
+  return sample(pool, pool.length).map((c) => ({ code: c.code, category: c.category }));
+}
+
+export async function resolveCard(code: string): Promise<GameCardRef | null> {
+  const c = await prisma.card.findUnique({ where: { code } });
+  return c && c.active ? toRef(c) : null;
 }
 
 export function countByCategory(pool: GameCardRef[], exclude: Set<string> = new Set()): Record<string, number> {

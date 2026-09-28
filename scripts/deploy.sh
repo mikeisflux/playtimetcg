@@ -208,12 +208,48 @@ import_cards() {
   npm run cards:import -- "$CARDS_PDF"
 }
 
+# The seven colored card backs (one page each, die order) — a separate PDF
+# on Google Drive. Override with BACKS_PDF_URL / BACKS_DRIVE_ID.
+BACKS_DRIVE_ID="${BACKS_DRIVE_ID:-1XhQM2KkJlt9PleobLFmlIfI4EvleIdTi}"
+BACKS_PDF="${BACKS_PDF:-$APP_DIR/private-assets/card-backs.pdf}"
+
+fetch_backs_pdf() {
+  [ -f "$BACKS_PDF" ] && head -c 5 "$BACKS_PDF" | grep -q '%PDF' && return 0
+  mkdir -p "$(dirname "$BACKS_PDF")"
+  local url="${BACKS_PDF_URL:-https://drive.usercontent.google.com/download?id=${BACKS_DRIVE_ID}&export=download&confirm=t}"
+  log "Downloading the card backs PDF from Google Drive…"
+  curl -fsSL -o "$BACKS_PDF.part" "$url" || { log "⚠ download failed"; rm -f "$BACKS_PDF.part"; return 1; }
+  if ! head -c 5 "$BACKS_PDF.part" | grep -q '%PDF'; then
+    local uuid; uuid=$(grep -o 'name="uuid" value="[^"]*"' "$BACKS_PDF.part" | head -1 | sed 's/.*value="//;s/"//')
+    curl -fsSL -o "$BACKS_PDF.part" "https://drive.usercontent.google.com/download?id=${BACKS_DRIVE_ID}&export=download&confirm=t&uuid=${uuid}" || true
+  fi
+  if head -c 5 "$BACKS_PDF.part" | grep -q '%PDF'; then
+    mv "$BACKS_PDF.part" "$BACKS_PDF"; log "Card backs PDF saved to $BACKS_PDF"; return 0
+  fi
+  rm -f "$BACKS_PDF.part"; log "⚠ Google Drive did not return a PDF for the card backs — is it shared as “Anyone with the link”?"; return 1
+}
+
+import_backs() {
+  cd "$APP_DIR"; load_env
+  fetch_backs_pdf || return 1
+  log "Rendering the seven card backs…"
+  npm run backs:import -- "$BACKS_PDF"
+}
+
 pull_code() {
   cd "$APP_DIR"
   log "Pulling latest ${BRANCH}…"
   git fetch origin "$BRANCH"
+  local before; before=$(git rev-parse HEAD 2>/dev/null || echo "")
   git checkout -q "$BRANCH" 2>/dev/null || git checkout -q -b "$BRANCH" "origin/${BRANCH}"
   git reset -q --hard "origin/${BRANCH}"
+  if [ -n "$before" ] && [ "$before" != "$(git rev-parse HEAD)" ]; then
+    log "Changes since $(git rev-parse --short "$before"):"
+    git --no-pager log --reverse --pretty="   %h %s" "${before}..HEAD" | head -40
+    git --no-pager diff --stat=110 "${before}..HEAD" | tail -60
+  else
+    log "Already up to date."
+  fi
   log "Now at $(git rev-parse --short HEAD): $(git log -1 --pretty=%s)"
 }
 
@@ -235,6 +271,7 @@ build_app() {
   npm run db:seed
   fetch_promo_video && set_video_settings
   import_cards || log "⚠ card artwork not imported — the site falls back to text cards (run ./scripts/deploy.sh cards to retry)"
+  import_backs || log "⚠ card backs not imported — the game falls back to colored CSS backs (run ./scripts/deploy.sh backs to retry)"
   log "Building (next build, heap $(build_heap_mb) MB)…"
   export NODE_OPTIONS="--max-old-space-size=$(build_heap_mb)"
   NEXT_PUBLIC_PT_BUILD="$(date -u +%Y-%m-%d).$(git rev-parse --short=10 HEAD 2>/dev/null || date +%s)"
@@ -307,6 +344,9 @@ case "$cmd" in
     ;;
   cards)
     import_cards && log "Card artwork imported ✔ (already live — no restart needed)"
+    ;;
+  backs)
+    rm -f "$BACKS_PDF"; import_backs && log "Card backs imported ✔ (already live — no restart needed)"
     ;;
   video)
     cd "$APP_DIR"; fetch_promo_video && set_video_settings || fail "Promo video not in place."

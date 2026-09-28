@@ -7,7 +7,7 @@
    the server's .env (git-ignored). If it is missing on first run, a random
    one is generated and printed once. */
 import "dotenv/config";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { PrismaClient } from "../src/generated/prisma/client.ts";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { randomBytes, scryptSync } from "crypto";
@@ -55,7 +55,7 @@ for (const d of setDefs) {
   sets[d.slug] = await prisma.cardSet.upsert({ where: { slug: d.slug }, update: { name: d.name, kind: d.kind, accent: d.accent, sortIndex: d.sortIndex }, create: d });
 }
 
-/* ───── cards: docs/Play_Time_Full_Card_Set.csv is the source of truth
+/* ───── cards: docs/Play_Time_Full_Card_Set_with_Backs.csv is the source of truth
    (title, description, category, rarity, spice, time — owner supplied).
    design/cards/cards-meta.json supplies the print-PDF page order. ───── */
 const game = JSON.parse(readFileSync(new URL("../design/handoff/content/game.json", import.meta.url), "utf8"));
@@ -79,14 +79,16 @@ function parseCsv(text) {
 }
 let cardRows = [];
 try {
-  const [head, ...body] = parseCsv(readFileSync(new URL("../docs/Play_Time_Full_Card_Set.csv", import.meta.url), "utf8").replace(/^\uFEFF/, ""));
+  const csvFile = ["../docs/Play_Time_Full_Card_Set_with_Backs.csv", "../docs/Play_Time_Full_Card_Set.csv"].map((f) => new URL(f, import.meta.url)).find((u) => existsSync(u));
+  if (!csvFile) throw new Error("no card CSV in docs/");
+  const [head, ...body] = parseCsv(readFileSync(csvFile, "utf8").replace(/^\uFEFF/, ""));
   const idx = Object.fromEntries(head.map((h, i) => [h.trim(), i]));
   cardRows = body.map((r) => ({
     set: csvSetSlug[r[idx.Set]?.trim()] ?? "base", code: r[idx.CardID].trim(), title: r[idx.Title].trim(), text: r[idx.Description].trim(),
     category: r[idx.Category].trim(), rarity: r[idx.Rarity].trim(), spice: Number(r[idx.SpiceLevel]) || 3, time: r[idx.TimeEstimate].trim() || "Varies",
   }));
 } catch (e) {
-  console.log("⚠ docs/Play_Time_Full_Card_Set.csv not readable — falling back to print-PDF metadata with placeholder titles.", e.message);
+  console.log("⚠ card CSV not readable — falling back to print-PDF metadata with placeholder titles.", e.message);
   const perSetIndex = {};
   cardRows = meta.map((m) => {
     const k = `${m.set}:${m.category}`; perSetIndex[k] = (perSetIndex[k] ?? 0) + 1;
@@ -107,7 +109,7 @@ for (const c of stale) {
   if (c._count.owners) await prisma.card.update({ where: { id: c.id }, data: { active: false } });
   else await prisma.card.delete({ where: { id: c.id } });
 }
-console.log(`✔ ${cardCount} cards ensured from docs/Play_Time_Full_Card_Set.csv${stale.length ? ` (${stale.length} old placeholders retired)` : ""}.`);
+console.log(`✔ ${cardCount} cards ensured from the card CSV${stale.length ? ` (${stale.length} old placeholders retired)` : ""}.`);
 
 /* ───── products ───── */
 let sort = 0;

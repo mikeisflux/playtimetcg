@@ -16,9 +16,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const PLAYING = [
-  { title: "Shuffle in by color", body: "Expansion cards carry the same category bars. Shuffle each one into its matching pile. The die works exactly the same." },
-  { title: "Themed night", body: "One pack’s 12 cards don’t cover every face of the die. Place each expansion card on top of its matching base pile instead. You’ll draw the theme first and fall back to the base deck when it runs dry." },
-  { title: "No-die night", body: "Or skip the die. Shuffle one pack into a single pile and take turns drawing from the top. This works best for Date Night and Travel, where the cards follow the evening rather than the roll." },
+  { title: "Just shuffle them in", body: "Same colored backs as the base deck. Shuffle them straight in." },
+  { title: "Themed night", body: "One pack’s 12 cards don’t cover every face of the die. Keep the pack as a small deck of its own. Look for a match there first, then in the base deck." },
+  { title: "No-die night", body: "Or skip the die. Shuffle one pack on its own and take turns drawing from the top. This works best for Date Night and Travel, where the cards follow the evening rather than the roll." },
   { title: "Pack for the trip", body: "Date Night, Weekend Getaway and Travel cards often need somewhere you aren’t yet. Pull them before you leave and take a small stack with you." },
   { title: "Ceiling still applies", body: "Expansion cards follow your Spice ceiling like any other. Quick & Dirty leans hot: most of its cards are Spice 4." },
 ];

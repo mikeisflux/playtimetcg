@@ -18,7 +18,7 @@ export interface RoomResponse { version: number; state: GameState; status: strin
 /* What the client posts: an Action without userId (the server sets it), and a
    "draw" that only names the count (the server picks the cards). */
 type Strip<T> = T extends { userId: string } ? Omit<T, "userId"> : T;
-export type ClientAction = Exclude<Strip<Action>, { type: "draw" }> | { type: "draw"; count: 1 | 2 } | { type: "pickAny"; code: string };
+export type ClientAction = Exclude<Strip<Action>, { type: "draw" } | { type: "start" }> | { type: "start" } | { type: "draw" } | { type: "pickAny"; code: string };
 
 export function toCardData(c: GameCardRef | CollectionItem | { code: string; title: string; category: string; rarity: string; spice: number; time: string; text: string; art?: string | null; imageUrl?: string | null }): CardData {
   const art = "art" in c && c.art ? c.art : "imageUrl" in c && c.imageUrl ? `/api/cards/art/${c.code}` : null;

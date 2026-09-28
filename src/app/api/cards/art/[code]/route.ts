@@ -20,12 +20,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ code: s
   const user = isPublic ? null : await getSessionUser();
   if (!isPublic && !user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   if (!isPublic && user && !user.isAdmin) {
-    const ok = code === "BACK"
+    const ok = /^BACK[1-7]?$/.test(code)
       ? await hasOnlineAccess(user.id)
       : (await prisma.userCard.count({ where: { userId: user.id, card: { code } } })) > 0 || (await hasOnlineAccess(user.id));
     if (!ok) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
-  const file = path.join(process.cwd(), "private-assets", "cards", `${code === "BACK" ? "back" : code}.jpg`);
+  /* BACK = the neutral back; BACK1…BACK7 = the seven category backs (die order). */
+  const backN = /^BACK([1-7])$/.exec(code)?.[1];
+  const file = path.join(process.cwd(), "private-assets", "cards", `${backN ? `back-${backN}` : code === "BACK" ? "back" : code}.jpg`);
   try {
     const st = await stat(file);
     const body = await readFile(file);

@@ -39,6 +39,18 @@ export function categoryForRoll(n: number): DieFace {
   return DIE.find((d) => d.faces.includes(n)) ?? DIE[0];
 }
 
+/* Every card back is printed in its category color with its die numbers
+   (backs PDF page 1–7, in die order). One shuffled deck; roll, take the
+   first card whose back matches. */
+export function backNumber(category: string): number {
+  const i = DIE.findIndex((d) => d.category === category);
+  return i < 0 ? 0 : i + 1;
+}
+export function backArtUrl(category: string): string {
+  const n = backNumber(category);
+  return n ? `/api/cards/art/BACK${n}` : "/api/cards/art/BACK";
+}
+
 export type Rarity = "Common" | "Uncommon" | "Rare";
 
 export const RARITIES: { name: Rarity; frame: string; body: string }[] = [
@@ -87,7 +99,7 @@ export function sampleCardFor(category: Category): CardData {
 
 export const HOW_STEPS = [
   { n: "01", col: "#3FD6C8", title: "Roll", body: "The 12-sided die picks one of seven categories." },
-  { n: "02", col: "#A68CF5", title: "Draw", body: "Take a card from the matching pile. Want a choice? Draw two, keep one." },
+  { n: "02", col: "#A68CF5", title: "Draw", body: "One shuffled deck. Take the first card whose back matches your roll." },
   { n: "03", col: "#FF5C8A", title: "Read it out loud", body: "Every word, exactly as written. Saying it is half of it." },
   { n: "04", col: "#FFD23F", title: "Do it, tweak it, or pass", body: "Either of you can pass on any card. Then switch turns and keep going." },
 ];

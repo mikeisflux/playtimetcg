@@ -2,8 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { GameState, PlayerState } from "@/lib/game";
-import { categoryForRoll } from "@/lib/content";
-import { DieFace, GameCard } from "@/components/ui";
+import { categoryForRoll, DIE, backArtUrl } from "@/lib/content";
+import { DieFace, GameCard, CardBack } from "@/components/ui";
 import type { Act } from "./Room";
 import { GREY, toCardData, type CollectionItem } from "./types";
 
@@ -133,9 +133,10 @@ export default function RoomTable({ state, me, roller, catColor, act }: {
 
       {state.phase === "draw" && state.emptyPile && (
         <div className="stack gap-20">
+          <DeckFan deck={state.deck} category={state.category} />
           <div className="stack gap-12">
-            <div className="t-item">The {state.category} pile is empty.</div>
-            <p className="t-body-sm">Nothing left in that category under tonight’s ceiling. Roll again, or step one category up the ramp.</p>
+            <div className="t-item">No {state.category} back left in the deck.</div>
+            <p className="t-body-sm">Every card with that color is played, saved or above tonight’s ceiling. Roll again, or step one category up the ramp.</p>
           </div>
           {isRoller ? (
             <div className="row">
@@ -147,31 +148,27 @@ export default function RoomTable({ state, me, roller, catColor, act }: {
       )}
 
       {state.phase === "draw" && !state.emptyPile && (
-        state.hand.length === 2 ? (
+        state.specialMode === "dealer" ? (
           <div className="stack gap-20">
-            <div className="label">{isRoller ? "Two cards. Keep one — the other slides back into its pile." : `${roller?.name} is choosing…`}</div>
-            <div className="hand">
-              {state.hand.map((c) => (
-                <div key={c.code} className="hand__pick">
-                  <GameCard card={toCardData(c)} />
-                  {isRoller && <button className="btn btn--outline" onClick={() => void act({ type: "keep", code: c.code })}>Keep this one</button>}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : state.specialMode === "dealer" ? (
-          isRoller ? <DealerPick ceiling={Math.min(...state.players.map((p) => p.ceiling))} drawn={state.drawn} act={act} /> : <div className="note">Waiting for {roller?.name ?? "your partner"} to pick any card…</div>
-        ) : isRoller ? (
-          <div className="stack gap-12">
-            <div className="row">
-              <button className="btn" onClick={() => void act({ type: "draw", count: 1 })}>Draw one</button>
-              <button className="btn btn--outline" onClick={() => void act({ type: "draw", count: 2 })} disabled={left < 2}>Draw two, keep one</button>
-              <button className="btn btn--text" onClick={() => void act({ type: "reroll" })}>Roll again</button>
-            </div>
-            <div className="note">{left ? `${left} ${state.category} card${left === 1 ? "" : "s"} left under the ceiling.` : "Drawing from your collection, under tonight’s ceiling."}</div>
+            <DeckFan deck={state.deck} category={null} />
+            {isRoller ? <DealerPick deck={state.deck} act={act} /> : <div className="note">Waiting for {roller?.name ?? "your partner"} to look through the deck and pick any card…</div>}
           </div>
         ) : (
-          <div className="note">Waiting for {roller?.name ?? "your partner"} to draw…</div>
+          <div className="stack gap-20">
+            <DeckFan deck={state.deck} category={state.category} />
+            {state.category && <BackPreview category={state.category} />}
+            {isRoller ? (
+              <div className="stack gap-12">
+                <div className="row">
+                  <button className="btn" onClick={() => void act({ type: "draw" })}>Take the first {state.category} back</button>
+                  <button className="btn btn--text" onClick={() => void act({ type: "reroll" })}>Roll again</button>
+                </div>
+                <div className="note">{left} {state.category} card{left === 1 ? "" : "s"} left in the deck. The first one from the top is yours.</div>
+              </div>
+            ) : (
+              <div className="note">Waiting for {roller?.name ?? "your partner"} to draw…</div>
+            )}
+          </div>
         )
       )}
 
@@ -208,21 +205,53 @@ export default function RoomTable({ state, me, roller, catColor, act }: {
   );
 }
 
-/* Dealer's Choice: the roller picks any card from any pile under the ceiling. */
-function DealerPick({ ceiling, drawn, act }: { ceiling: number; drawn: string[]; act: Act }) {
+/* The matched back, face down, before it's turned over: the printed back
+   artwork when the server has it, else the CSS stand-in. */
+function BackPreview({ category }: { category: string }) {
+  const [art, setArt] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    const url = backArtUrl(category);
+    fetch(url, { method: "HEAD" }).then((r) => { if (alive) setArt(r.ok ? url : null); }).catch(() => { if (alive) setArt(null); });
+    return () => { alive = false; };
+  }, [category]);
+  if (art === undefined) return null;
+  return <CardBack small category={category} art={art} />;
+}
+
+/* The deck, face down: one colored back per card, top of the deck first.
+   After a roll the first matching back is lifted — that's the card you take. */
+function DeckFan({ deck, category }: { deck: GameState["deck"]; category: string | null }) {
+  const cards = Array.isArray(deck) ? deck : [];
+  const pick = category ? cards.findIndex((d) => d.category === category) : -1;
+  return (
+    <div className="stack gap-12">
+      <div className="label">The deck · {cards.length} card{cards.length === 1 ? "" : "s"}, top first</div>
+      <div className="deckfan" aria-label="Deck, face down">
+        {cards.map((d, i) => {
+          const face = DIE.find((f) => f.category === d.category);
+          return <div key={i} className={`deckfan__card${category && d.category === category ? " on" : ""}${i === pick ? " pick" : ""}`} style={{ "--c": face?.color ?? GREY } as React.CSSProperties} title={`${d.category} · roll ${face?.label ?? ""}`} />;
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* Dealer's Choice: the roller looks through the whole deck and picks one card. */
+function DealerPick({ deck, act }: { deck: GameState["deck"]; act: Act }) {
   const [items, setItems] = useState<CollectionItem[] | null>(null);
   const [code, setCode] = useState("");
   useEffect(() => {
     fetch("/api/play/collection").then((r) => r.json()).then((d: CollectionItem[] | { error: string }) => { if (Array.isArray(d)) setItems(d); }).catch(() => setItems([]));
   }, []);
-  const out = new Set(drawn);
-  const options = (items ?? []).filter((c) => c.spice <= ceiling && !out.has(c.code)).sort((a, b) => a.category.localeCompare(b.category) || a.code.localeCompare(b.code));
+  const inDeck = new Set((Array.isArray(deck) ? deck : []).map((d) => d.code).filter(Boolean));
+  const options = (items ?? []).filter((c) => inDeck.has(c.code)).sort((a, b) => a.category.localeCompare(b.category) || a.code.localeCompare(b.code));
   return (
     <div className="stack gap-12">
-      <div className="label">Dealer’s Choice · pick any card from any pile</div>
+      <div className="label">Dealer’s Choice · pick any card in the deck</div>
       <div className="row">
         <select className="input" style={{ maxWidth: 420 }} value={code} onChange={(e) => setCode(e.target.value)}>
-          <option value="">{items ? "Choose a card…" : "Loading your collection…"}</option>
+          <option value="">{items ? "Choose a card…" : "Loading the deck…"}</option>
           {options.map((c) => <option key={c.code} value={c.code}>{c.category} · {c.title} · {c.spice}/5</option>)}
         </select>
         <button className="btn" disabled={!code} onClick={() => void act({ type: "pickAny", code })}>Play it</button>
