@@ -55,37 +55,50 @@ for (const d of setDefs) {
   sets[d.slug] = await prisma.cardSet.upsert({ where: { slug: d.slug }, update: { name: d.name, kind: d.kind, accent: d.accent, sortIndex: d.sortIndex }, create: d });
 }
 
-/* ───── cards: all 144 from the print PDF (design/cards/cards-meta.json —
-   set, code, category, rarity, spice, time). Titles and instructions are
-   printed in the artwork; until they are transcribed (Admin → Cards or CSV
-   import) placeholders are used, and edited titles are never overwritten. ───── */
+/* ───── cards: docs/Play_Time_Full_Card_Set.csv is the source of truth
+   (title, description, category, rarity, spice, time — owner supplied).
+   design/cards/cards-meta.json supplies the print-PDF page order. ───── */
 const game = JSON.parse(readFileSync(new URL("../design/handoff/content/game.json", import.meta.url), "utf8"));
 const catalog = JSON.parse(readFileSync(new URL("../design/handoff/content/catalog.json", import.meta.url), "utf8"));
 const meta = JSON.parse(readFileSync(new URL("../design/cards/cards-meta.json", import.meta.url), "utf8"));
-const sampleByCode = Object.fromEntries(game.sampleCards.map((c) => [c.id, c]));
-const perSetIndex = {};
-let cardCount = 0;
-for (const m of meta) {
-  const set = sets[m.set];
-  if (!set) continue;
-  const k = `${m.set}:${m.category}`;
-  perSetIndex[k] = (perSetIndex[k] ?? 0) + 1;
-  const sample = sampleByCode[m.code];
-  const placeholderTitle = `${m.category} ${perSetIndex[k]}`;
-  const placeholderText = `Card text for ${m.code} is printed on the card. Add it in Admin → Cards (or import the CSV) to show it online.`;
-  const existing = await prisma.card.findUnique({ where: { code: m.code } });
-  const isPlaceholder = !existing || /^Card text for /.test(existing.text);
-  await prisma.card.upsert({
-    where: { code: m.code },
-    update: {
-      setId: set.id, category: m.category, rarity: m.rarity, spice: m.spice, time: m.time, sortIndex: m.page,
-      ...(sample ? { title: sample.title, text: sample.text } : isPlaceholder ? { title: placeholderTitle, text: placeholderText } : {}),
-    },
-    create: {
-      code: m.code, setId: set.id, sortIndex: m.page, category: m.category, rarity: m.rarity, spice: m.spice, time: m.time,
-      title: sample ? sample.title : placeholderTitle, text: sample ? sample.text : placeholderText,
-    },
+const pageOf = Object.fromEntries(meta.map((m) => [m.code, m.page]));
+const csvSetSlug = { "Base": "base", "Date Night": "date-night", "Weekend Getaway": "weekend", "Long-Term Couples": "long-term", "Quick & Dirty": "quick", "Toy-Friendly": "toy", "Travel": "travel" };
+
+function parseCsv(text) {
+  const rows = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+    else if (c === '"') q = true;
+    else if (c === ",") { row.push(cell); cell = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; }
+    else cell += c;
+  }
+  if (cell.length || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter((r) => r.some((x) => x.trim() !== ""));
+}
+let cardRows = [];
+try {
+  const [head, ...body] = parseCsv(readFileSync(new URL("../docs/Play_Time_Full_Card_Set.csv", import.meta.url), "utf8").replace(/^\uFEFF/, ""));
+  const idx = Object.fromEntries(head.map((h, i) => [h.trim(), i]));
+  cardRows = body.map((r) => ({
+    set: csvSetSlug[r[idx.Set]?.trim()] ?? "base", code: r[idx.CardID].trim(), title: r[idx.Title].trim(), text: r[idx.Description].trim(),
+    category: r[idx.Category].trim(), rarity: r[idx.Rarity].trim(), spice: Number(r[idx.SpiceLevel]) || 3, time: r[idx.TimeEstimate].trim() || "Varies",
+  }));
+} catch (e) {
+  console.log("⚠ docs/Play_Time_Full_Card_Set.csv not readable — falling back to print-PDF metadata with placeholder titles.", e.message);
+  const perSetIndex = {};
+  cardRows = meta.map((m) => {
+    const k = `${m.set}:${m.category}`; perSetIndex[k] = (perSetIndex[k] ?? 0) + 1;
+    return { set: m.set, code: m.code, title: `${m.category} ${perSetIndex[k]}`, text: `Card text for ${m.code} is added in Admin → Cards.`, category: m.category, rarity: m.rarity, spice: m.spice, time: m.time };
   });
+}
+let cardCount = 0;
+for (const c of cardRows) {
+  const set = sets[c.set];
+  if (!set || !c.code) continue;
+  const data = { setId: set.id, title: c.title, text: c.text, category: c.category, rarity: c.rarity, spice: c.spice, time: c.time, sortIndex: pageOf[c.code] ?? 999 };
+  await prisma.card.upsert({ where: { code: c.code }, update: data, create: { code: c.code, ...data } });
   cardCount++;
 }
 /* retire the pre-print placeholder codes (DN01…, WG01…, LT01…, QD01…, TF01…, TR01…TR12) */
@@ -94,7 +107,7 @@ for (const c of stale) {
   if (c._count.owners) await prisma.card.update({ where: { id: c.id }, data: { active: false } });
   else await prisma.card.delete({ where: { id: c.id } });
 }
-console.log(`✔ ${cardCount} cards ensured from the print PDF metadata${stale.length ? ` (${stale.length} old placeholders retired)` : ""}.`);
+console.log(`✔ ${cardCount} cards ensured from docs/Play_Time_Full_Card_Set.csv${stale.length ? ` (${stale.length} old placeholders retired)` : ""}.`);
 
 /* ───── products ───── */
 let sort = 0;

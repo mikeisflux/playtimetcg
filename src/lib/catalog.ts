@@ -3,6 +3,7 @@
    placeholder the owner has not confirmed — change it in Admin → Products. */
 import { prisma } from "./db";
 import type { Product } from "@/generated/prisma/client";
+import { SAMPLE_CARDS, type CardData, type Category, type Rarity } from "./content";
 
 export type ProductKind = "set" | "expansion" | "digital_pack" | "subscription";
 
@@ -45,6 +46,20 @@ export async function productsByIds(ids: string[]): Promise<Map<string, Product>
   if (!ids.length) return new Map();
   const rows = await prisma.product.findMany({ where: { id: { in: ids }, active: true } });
   return new Map(rows.map((r) => [r.id, r]));
+}
+
+/* The seven public sample cards (one per category), read from the database
+   so titles, text and artwork stay in sync with Admin → Cards. Falls back to
+   the design handoff's static samples. */
+export async function sampleCards(): Promise<CardData[]> {
+  try {
+    const rows = await prisma.card.findMany({ where: { code: { in: SAMPLE_CARDS.map((c) => c.code) }, active: true } });
+    const byCode = new Map(rows.map((r) => [r.code, r]));
+    return SAMPLE_CARDS.map((s) => {
+      const r = byCode.get(s.code);
+      return r ? { code: r.code, title: r.title, category: r.category as Category, rarity: r.rarity as Rarity, spice: r.spice, time: r.time, text: r.text, art: r.imageUrl ? `/api/cards/art/${r.code}` : null } : s;
+    });
+  } catch { return SAMPLE_CARDS; }
 }
 
 /* Artwork URLs for a list of card codes (only cards whose art has been

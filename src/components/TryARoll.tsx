@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { DIE, categoryForRoll, sampleCardFor } from "@/lib/content";
+import { DIE, categoryForRoll, SAMPLE_CARDS, type CardData } from "@/lib/content";
 import { DieFace, GameCard } from "./ui";
 
 /* The interactive die: 11 ticks every 70ms (770ms), settles on 1–12.
    Honors prefers-reduced-motion by showing the result immediately. */
-export default function TryARoll({ large, onResult, art = {} }: { large?: boolean; onResult?: (n: number) => void; art?: Record<string, string> }) {
+export default function TryARoll({ large, onResult, cards = SAMPLE_CARDS }: { large?: boolean; onResult?: (n: number) => void; cards?: CardData[] }) {
   const [n, setN] = useState(1);
   const [rolling, setRolling] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -30,7 +30,7 @@ export default function TryARoll({ large, onResult, art = {} }: { large?: boolea
   }
 
   const face = categoryForRoll(n);
-  const card = sampleCardFor(face.category);
+  const card = cards.find((c) => c.category === face.category) ?? cards[0];
 
   return (
     <div className="grid g-400" style={{ gap: "clamp(40px, 6vw, 96px)", alignItems: "start" }}>
@@ -56,7 +56,7 @@ export default function TryARoll({ large, onResult, art = {} }: { large?: boolea
       </div>
       <div className="stack gap-20" style={{ alignItems: "flex-start" }}>
         <div className="label" style={{ fontSize: 12, letterSpacing: "0.18em" }}>A card from {face.category}</div>
-        <GameCard card={{ ...card, art: art[card.code] ?? null }} />
+        <GameCard card={card} />
       </div>
     </div>
   );

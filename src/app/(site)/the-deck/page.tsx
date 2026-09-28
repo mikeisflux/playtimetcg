@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { GameCard, RarityFrame, SpiceMeter } from "@/components/ui";
 import TryARoll from "@/components/TryARoll";
-import { DIE, SAMPLE_CARDS, RARITIES, HEAT_LEVELS } from "@/lib/content";
-import { cardArtMap } from "@/lib/catalog";
+import { DIE, RARITIES, HEAT_LEVELS } from "@/lib/content";
+import { sampleCards } from "@/lib/catalog";
 import { buildMetadata, jsonLdFor } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,7 +22,7 @@ const INSIDE: [string, string][] = [
 ];
 
 export default async function TheDeck() {
-  const art = await cardArtMap(SAMPLE_CARDS.map((c) => c.code));
+  const samples = await sampleCards();
   const jsonLd = await jsonLdFor("/the-deck");
   const legend = DIE.map((d) => `${d.label} ${d.category}`).join(" · ");
 
@@ -42,7 +42,7 @@ export default async function TheDeck() {
 
       {/* Try a roll */}
       <section id="deck" className="surface" data-screen-label="Try a roll">
-        <div className="wrap section"><TryARoll art={art} /></div>
+        <div className="wrap section"><TryARoll cards={samples} /></div>
       </section>
 
       {/* One card from every category */}
@@ -55,7 +55,7 @@ export default async function TheDeck() {
           <div className="label" style={{ fontSize: 12, maxWidth: 360 }}>Seven categories, one sample from each. Roll the die above to see them in play.</div>
         </div>
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: 24, justifyItems: "start" }}>
-          {SAMPLE_CARDS.map((c) => <GameCard key={c.code} card={{ ...c, art: art[c.code] ?? null }} />)}
+          {samples.map((c) => <GameCard key={c.code} card={c} />)}
         </div>
       </section>
 
