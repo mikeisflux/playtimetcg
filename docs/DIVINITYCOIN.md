@@ -16,6 +16,7 @@ hard-coded.
 | `DIVINITYCOIN_PUBLIC_KEY` | Publishable key, if DivinityCoin issues one alongside the API key. Stored for the hosted checkout; not required by the server-to-server calls. |
 | `DIVINITYCOIN_PARTNER_SLUG` | Our partner id on DivinityCoin (`playtimetcg`). Sent as `X-Partner`. |
 | `DIVINITYCOIN_WEBHOOK_SECRET` | HMAC-SHA256 secret DivinityCoin signs webhook deliveries with. |
+| `DIVINITYCOIN_INTERNAL_PATH` | Where the internal API is mounted: `/api/internal` on the public domain (default), `/internal` on the VPN service. |
 | `DIVINITYCOIN_CHECKOUT_PATH` | Hosted checkout endpoint path (default `/api/partner/checkout`). |
 | `DIVINITYCOIN_ALLOW_CREDITS` | Let shoppers pay with a redeemed credit balance. |
 | `DIVINITYCOIN_TEST_MODE` | Replaces the redirect with a local simulator that posts signed events to our own webhook. |
@@ -83,11 +84,11 @@ All `POST`, JSON, with `X-Internal-Key` and `X-Partner`.
 
 | Endpoint | Body | Used for |
 |---|---|---|
-| `/internal/balance` | `{ platformUserId }` | Checkout "Pay with credits", Account → Credits |
-| `/internal/validate` | `{ code, platformUserId, ipAddress, userAgent }` | Account → Credits → Redeem a code |
-| `/internal/hold` | `{ platformUserId, amount, pledgeId: <orderId>, projectId: "playtimetcg-order", expiresAt }` | Pay with credits (step 1) |
-| `/internal/capture` | `{ pledgeId: <orderId> }` | Pay with credits (step 2) |
-| `/internal/release` | `{ pledgeId: <orderId> }` | Rollback when capture fails |
+| `<internal path>/balance` | `{ platformUserId }` | Checkout "Pay with credits", Account → Credits |
+| `<internal path>/validate` | `{ code, platformUserId, ipAddress, userAgent }` | Account → Credits → Redeem a code |
+| `<internal path>/hold` | `{ platformUserId, amount, pledgeId: <orderId>, projectId: "playtimetcg-order", expiresAt }` | Pay with credits (step 1) |
+| `<internal path>/capture` | `{ pledgeId: <orderId> }` | Pay with credits (step 2) |
+| `<internal path>/release` | `{ pledgeId: <orderId> }` | Rollback when capture fails |
 | `GET /internal/health` | — | Admin dashboard / Settings → Test |
 
 ### Hosted checkout

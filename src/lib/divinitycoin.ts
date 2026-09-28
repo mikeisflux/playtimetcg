@@ -53,13 +53,16 @@ export interface SubscriptionCheckoutInput {
 }
 
 async function config() {
-  const s = await getSettings(["DIVINITYCOIN_API_URL", "DIVINITYCOIN_API_KEY", "DIVINITYCOIN_WEBHOOK_SECRET", "DIVINITYCOIN_PARTNER_SLUG", "DIVINITYCOIN_CHECKOUT_PATH", "DIVINITYCOIN_TEST_MODE", "DIVINITYCOIN_ALLOW_CREDITS", "SITE_URL"]);
+  const s = await getSettings(["DIVINITYCOIN_API_URL", "DIVINITYCOIN_API_KEY", "DIVINITYCOIN_WEBHOOK_SECRET", "DIVINITYCOIN_PARTNER_SLUG", "DIVINITYCOIN_CHECKOUT_PATH", "DIVINITYCOIN_INTERNAL_PATH", "DIVINITYCOIN_TEST_MODE", "DIVINITYCOIN_ALLOW_CREDITS", "SITE_URL"]);
   return {
     baseUrl: (s.DIVINITYCOIN_API_URL || "https://divinitycoin.com").replace(/\/$/, ""),
     apiKey: s.DIVINITYCOIN_API_KEY,
     webhookSecret: s.DIVINITYCOIN_WEBHOOK_SECRET,
     partner: s.DIVINITYCOIN_PARTNER_SLUG || "playtimetcg",
     checkoutPath: s.DIVINITYCOIN_CHECKOUT_PATH || "/api/partner/checkout",
+    /* On the public domain the internal API is mounted under /api/internal;
+       on the VPN service it is at the root (/internal). */
+    internalPath: (s.DIVINITYCOIN_INTERNAL_PATH || "/api/internal").replace(/\/$/, ""),
     testMode: flag(s.DIVINITYCOIN_TEST_MODE),
     allowCredits: flag(s.DIVINITYCOIN_ALLOW_CREDITS, true),
     webhookUrl: `${(s.SITE_URL || "https://playtimetcg.com").replace(/\/$/, "")}/api/webhooks/divinitycoin`,
@@ -98,34 +101,38 @@ class DivinityCoinClient {
   }
 
   /* ─── credits (spec §9.2) ─── */
+  private async internal<T>(endpoint: string, body: object): Promise<T> {
+    const c = await config();
+    return this.request<T>(`${c.internalPath}${endpoint}`, body);
+  }
   getBalance(userId: string) {
-    return this.request<CreditBalance>("/internal/balance", { platformUserId: userId });
+    return this.internal<CreditBalance>("/balance", { platformUserId: userId });
   }
   redeemCode(code: string, userId: string, ipAddress: string, userAgent?: string) {
-    return this.request<RedeemResult>("/internal/validate", {
+    return this.internal<RedeemResult>("/validate", {
       code: code.toUpperCase().replace(/-/g, ""), platformUserId: userId, ipAddress, userAgent,
     });
   }
   placeHold(userId: string, amount: number, orderId: string, expiresAt?: Date) {
     /* pledgeId/projectId keep the CreatorCredits field names; for a store the
        "pledge" is the order and the "project" is this partner. */
-    return this.request<HoldResult>("/internal/hold", {
+    return this.internal<HoldResult>("/hold", {
       platformUserId: userId, amount, pledgeId: orderId, projectId: "playtimetcg-order",
       expiresAt: expiresAt?.toISOString(),
     });
   }
   releaseHold(orderId: string) {
-    return this.request<SimpleResult>("/internal/release", { pledgeId: orderId });
+    return this.internal<SimpleResult>("/release", { pledgeId: orderId });
   }
   captureHold(orderId: string) {
-    return this.request<SimpleResult>("/internal/capture", { pledgeId: orderId });
+    return this.internal<SimpleResult>("/capture", { pledgeId: orderId });
   }
   async healthCheck(): Promise<{ ok: boolean; detail: string }> {
     try {
       const c = await config();
       if (!c.apiKey) return { ok: false, detail: "API key not set" };
-      const res = await fetch(`${c.baseUrl}/internal/health`, { headers: { "X-Internal-Key": c.apiKey }, signal: AbortSignal.timeout(5000) });
-      if (!res.ok) console.error(`[divinitycoin] GET ${c.baseUrl}/internal/health -> HTTP ${res.status}`);
+      const res = await fetch(`${c.baseUrl}${c.internalPath}/health`, { headers: { "X-Internal-Key": c.apiKey }, signal: AbortSignal.timeout(5000) });
+      if (!res.ok) console.error(`[divinitycoin] GET ${c.baseUrl}${c.internalPath}/health -> HTTP ${res.status}`);
       return { ok: res.ok, detail: res.ok ? await res.text() : `HTTP ${res.status}` };
     } catch (err) { return { ok: false, detail: String(err) }; }
   }
