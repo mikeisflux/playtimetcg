@@ -17,7 +17,9 @@ umask 077
 
 APP_DIR="${APP_DIR:-/opt/playtime}"
 REPO_URL="${REPO_URL:-https://github.com/mikeisflux/playtimetcg.git}"
-BRANCH="${BRANCH:-main}"
+# Default to whatever branch is checked out in APP_DIR (falls back to main
+# for a fresh clone). Override with BRANCH=… for a different one.
+BRANCH="${BRANCH:-$(git -C "${APP_DIR:-/opt/playtime}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo main)}"
 SERVICE="${SERVICE:-playtime}"
 PORT="${PORT:-3000}"
 DOMAIN="${DOMAIN:-playtimetcg.com}"
@@ -116,6 +118,15 @@ CADDY
   fi
 }
 
+pull_code() {
+  cd "$APP_DIR"
+  log "Pulling latest ${BRANCH}…"
+  git fetch origin "$BRANCH"
+  git checkout -q "$BRANCH" 2>/dev/null || git checkout -q -b "$BRANCH" "origin/${BRANCH}"
+  git reset -q --hard "origin/${BRANCH}"
+  log "Now at $(git rev-parse --short HEAD): $(git log -1 --pretty=%s)"
+}
+
 health_check() {
   log "Health check on http://localhost:${PORT} (up to ${HEALTH_TIMEOUT}s)…"
   for _ in $(seq 1 "$HEALTH_TIMEOUT"); do
@@ -157,7 +168,7 @@ case "$cmd" in
       log "Cloning ${REPO_URL} (${BRANCH}) into ${APP_DIR}…"
       git clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
     fi
-    cd "$APP_DIR"
+    pull_code
     provision_postgres
     load_env
     if ! grep -q '^AUTH_SECRET=' .env; then echo "AUTH_SECRET=\"$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')\"" >> .env; fi
@@ -177,8 +188,7 @@ case "$cmd" in
   deploy)
     cd "$APP_DIR" || fail "APP_DIR ${APP_DIR} not found — run setup first."
     ensure_node; ensure_pm2; load_env
-    log "Fetching ${BRANCH}…"
-    git fetch origin "$BRANCH" && git checkout -q "$BRANCH" && git reset -q --hard "origin/${BRANCH}"
+    pull_code
     build_app
     if pm2 describe "$SERVICE" >/dev/null 2>&1; then
       log "Reloading ${SERVICE} (zero-downtime)…"
