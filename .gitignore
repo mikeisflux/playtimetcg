@@ -17,3 +17,6 @@ next-env.d.ts
 # uploaded media (intro video, product photos, email attachments) live outside git
 /public/uploads/*
 !/public/uploads/.gitkeep
+
+# card artwork rendered from docs/Play Time Cards Print.pdf by scripts/import-card-art.mjs
+/private-assets/

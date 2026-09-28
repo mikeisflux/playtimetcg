@@ -60,7 +60,7 @@ export async function playablePool(state: GameState): Promise<GameCardRef[]> {
   return owned
     .map((o) => o.card)
     .filter((c) => !vetoed.has(c.code) && !drawn.has(c.code))
-    .map((c) => ({ code: c.code, title: c.title, category: c.category, rarity: c.rarity, spice: c.spice, time: c.time, text: c.text }));
+    .map((c) => ({ code: c.code, title: c.title, category: c.category, rarity: c.rarity, spice: c.spice, time: c.time, text: c.text, art: c.imageUrl ? `/api/cards/art/${c.code}` : null }));
 }
 
 export function countByCategory(pool: GameCardRef[], exclude: Set<string> = new Set()): Record<string, number> {

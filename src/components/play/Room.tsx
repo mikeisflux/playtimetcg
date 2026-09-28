@@ -70,10 +70,15 @@ export default function Room({ code, user, hostId, initial, version: v0 }: {
         </div>
 
         {state.specialMode === "focus" && (
-          <div className="banner" style={{ "--c": CATEGORY_COLORS["Focus on You"] } as React.CSSProperties}>Focus on You — the roller receives, the partner gives.</div>
+          <div className="banner" style={{ "--c": CATEGORY_COLORS["Focus on You"] } as React.CSSProperties}>
+            Focus on You — {state.receiverIndex !== null && state.players[state.receiverIndex] ? `${state.players[state.receiverIndex].name} receives; the other runs the night.` : "the roller decides who receives. The receiver doesn’t reciprocate, doesn’t hurry and doesn’t apologize."}
+          </div>
         )}
         {state.specialMode === "free" && (
-          <div className="banner" style={{ "--c": CATEGORY_COLORS["Free Play"] } as React.CSSProperties}>Free Play — Dealer’s Choice, Double Draw, Reverse Roles or Create your own.</div>
+          <div className="banner" style={{ "--c": CATEGORY_COLORS["Free Play"] } as React.CSSProperties}>Free Play — a card that hands the night back to you: Dealer’s Choice, Double Draw, Reverse Roles or Create.</div>
+        )}
+        {state.specialMode === "dealer" && (
+          <div className="banner" style={{ "--c": CATEGORY_COLORS["Free Play"] } as React.CSSProperties}>All four Free Play cards are played — a 12 now means the roller picks any card from any pile.</div>
         )}
 
         {err && <div className="note note--err" role="alert">{err}</div>}

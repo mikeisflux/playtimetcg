@@ -29,6 +29,12 @@ export function GameCard({ card, setName = "Base", small, imageUrl, className = 
       style={{ "--frame": rarityFrame(card.rarity), "--c": color, position: "relative" } as React.CSSProperties}
     >
       {isNew && <span className="newpill">New</span>}
+      {card.art ? (
+        <div className="card__in">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={card.art} alt={`${card.title} — ${card.category}, spice ${card.spice} of 5`} draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        </div>
+      ) : (
       <div className="card__in">
         <div className="card__img" style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}>
           <div className="card__meta"><span>{setName}</span><span>{card.code}</span></div>
@@ -45,6 +51,7 @@ export function GameCard({ card, setName = "Base", small, imageUrl, className = 
           <div className="card__foot"><span>Spice {card.spice}/5</span><span>{card.time}</span></div>
         </div>
       </div>
+      )}
     </div>
   );
 }

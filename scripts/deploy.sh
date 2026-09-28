@@ -132,6 +132,10 @@ build_app() {
   npx prisma db push --accept-data-loss=false 2>/dev/null || npx prisma db push
   log "Seeding (admin, catalog, defaults — idempotent)…"
   npm run db:seed
+  if [ -f "docs/Play Time Cards Print.pdf" ]; then
+    log "Rendering card artwork from docs/Play Time Cards Print.pdf…"
+    npm run cards:import || log "⚠ card artwork import failed — the game falls back to text cards"
+  fi
   log "Building (next build)…"
   NEXT_PUBLIC_PT_BUILD="$(date -u +%Y-%m-%d).$(git rev-parse --short=10 HEAD 2>/dev/null || date +%s)"
   export NEXT_PUBLIC_PT_BUILD

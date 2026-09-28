@@ -14,11 +14,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const PLAYING = [
-  { title: "Shuffle in by color", body: "Every expansion card carries the same category band as the base deck. Sort each one onto the matching pile and the die does the rest." },
-  { title: "Themed night", body: "Leave the base deck in the bag and play a single pack on its own. Twelve cards is a whole evening if you take your time." },
-  { title: "No-die night", body: "Fan a pack out face down and take turns drawing. No die, no categories, just twelve cards in whatever order they come." },
-  { title: "Pack for the trip", body: "One pack fits in a pocket. Take it along and leave the box at home; the ground rules still come with you." },
-  { title: "Your ceiling still applies", body: "Expansion cards carry spice ratings just like the base set. Anything above tonight’s ceiling stays out, and anyone can still pass." },
+  { title: "Shuffle in by color", body: "Expansion cards carry the same category bars. Shuffle each one into its matching pile. The die works exactly the same." },
+  { title: "Themed night", body: "One pack’s 12 cards don’t cover every face of the die. Place each expansion card on top of its matching base pile instead. You’ll draw the theme first and fall back to the base deck when it runs dry." },
+  { title: "No-die night", body: "Or skip the die. Shuffle one pack into a single pile and take turns drawing from the top. This works best for Date Night and Travel, where the cards follow the evening rather than the roll." },
+  { title: "Pack for the trip", body: "Date Night, Weekend Getaway and Travel cards often need somewhere you aren’t yet. Pull them before you leave and take a small stack with you." },
+  { title: "Ceiling still applies", body: "Expansion cards follow your Spice ceiling like any other. Quick & Dirty leans hot: most of its cards are Spice 4." },
 ];
 
 export default async function Expansions() {
@@ -75,7 +75,7 @@ export default async function Expansions() {
             <div className="eyebrow" style={{ color: "#A68CF5" }}>Mix and match</div>
             <h2 className="t-h3">Playing with expansions</h2>
             <p className="t-body" style={{ fontSize: 17, maxWidth: 420, marginTop: 8 }}>Five ways to use a pack. None of them changes the rules you already know.</p>
-            <div className="mono" style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-dim)", marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--rule)" }}>No expansion includes Free Play cards.</div>
+            <div className="mono" style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-dim)", marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--rule)" }}>No expansion includes Free Play cards. A 12 always draws from the base four.</div>
           </div>
           <div className="rows">
             {PLAYING.map((r, j) => (

@@ -59,8 +59,9 @@ Webhook at `/api/webhooks/sendgrid/events?key=<SENDGRID_EVENT_KEY>`.
 1. Confirm the expansion pack price (seeded at the $14 placeholder).
 2. Write Privacy, Terms, Shipping, Returns in Admin → Pages.
 3. Upload product photos for the four image slots and the intro video (Admin → Settings / Products).
-4. Import the real 72-card deck (Admin → Cards → CSV import) — placeholders are seeded so online play works today.
-5. Confirm DivinityCoin's adult-product and age-verification requirements before launch.
+4. Card copy: all 144 cards are seeded with their real set, category, rarity, spice and time from the print PDF (`design/cards/cards-meta.json`). Titles and instructions are printed in the artwork; enter them in Admin → Cards or via CSV import.
+5. Card artwork: put `Play Time Cards Print.pdf` in `docs/` and run `npm run cards:import` (the deploy script does this automatically). Cards render as full artwork in the online game, served only to players who own them via `/api/cards/art/<code>`; nothing is published on the open web.
+6. Confirm DivinityCoin's adult-product and age-verification requirements before launch.
 
 ## Design handoff
 

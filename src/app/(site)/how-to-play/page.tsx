@@ -16,69 +16,81 @@ interface Block { id: string; eyebrow: string; title: string; lead: string; colo
 
 const BLOCKS: Block[] = [
   {
-    id: "setup", eyebrow: "Before you start", title: "Setting up", color: "#3FD6C8",
-    lead: "Five minutes, once. After the first night the deck stays sorted and setup is just opening the bag.",
+    id: "setup", eyebrow: "Before the first roll", title: "Setting up", color: "#3FD6C8",
+    lead: "Two minutes the first time. Thirty seconds every time after.",
     rows: [
-      { title: "Sort the deck", body: "Split the 72 cards into seven piles by the color band on the front, one pile per category. Face down is fine; the color is all you need to see. Keep the quick start card within reach for your first night." },
-      { title: "Set your ceiling", body: "Every card carries a spice rating from 1 to 5. Agree on the highest number you are both up for tonight and set aside anything above it. The ceiling can move later, but only if you both want it to." },
-      { title: "Pull your vetoes", body: "Flip through the deck together and pull anything either of you would rather not see come up. No explanations required. A veto is not a judgment; it is how the deck becomes yours." },
-      { title: "Make room for three piles", body: "Clear a spot for Played, Saved and Retired. Played is for cards you have done, Saved is for the ones you want to come back to, and Retired is for cards you pass on mid-game. Each pile tells you something about the night." },
-      { title: "Pick a roller", body: "Decide who rolls first. Flip a coin, pick whoever suggested the game, or let the die decide with the highest roll going first. From there you take turns." },
+      { title: "Sort the deck", body: "Split the cards into seven piles by category color. Shuffle each pile and set it face down. The die tells you which pile to draw from." },
+      { title: "Set your ceiling", body: "Agree on the highest Spice level you’re playing tonight. Anything above it stays in the box. The three All In cards stay out unless you both ask for them." },
+      { title: "Pull your vetoes", body: "Either of you can take any card out before you start. No reason needed. It’s out for tonight, not forever." },
+      { title: "Make room for three piles", body: "Played, Saved and Retired. Every card you draw ends the night in one of them." },
+      { title: "Pick a roller", body: "Whoever suggested playing rolls first." },
     ],
   },
   {
-    id: "turn", eyebrow: "Roller and partner", title: "A full turn", color: "#5AB8F0",
-    lead: "Two roles, six steps. The roller drives the turn; the partner answers. Then you swap.",
+    id: "turn", eyebrow: "Turn by turn", title: "A full turn", color: "#5AB8F0",
+    lead: "Every turn has two roles. The roller rolls and reads. The partner answers. If a card says to roll the die or set a timer, do it — the numbers are part of the card.",
     rows: [
-      { title: "Roll the die", body: "The roller rolls the 12-sided die. The number points to a category, and the color on the die matches the color band on the pile: 1–2 is Soft Touch, all the way up to 12 for Free Play." },
-      { title: "Draw from the pile", body: "The roller takes the top card from the matching pile. Want a little choice? Draw two, keep one, and slide the other back to the bottom of the pile." },
-      { title: "Read it out loud", body: "The roller reads the card word for word, exactly as written. Saying it is half of it. The reading is part of the game, not a formality." },
-      { title: "The partner answers", body: "The partner chooses one of the four answers: do it, tweak it, save it or pass. The roller can pass too. Nobody has to explain their answer." },
-      { title: "Play the card", body: "If you are both in, play the card as written or as tweaked. Some cards give a time; others say Varies, which means the two of you decide." },
-      { title: "Switch roles", body: "Move the card to Played, Saved or Retired, then hand over the die. The partner becomes the roller and the next turn begins." },
+      { title: "Roll", body: "The number picks the pile. 1–2 Soft Touch, 3–4 Flirty Fun, 5–6 Classic Heat, 7–8 Turn It Up, 9–10 Wild Card, 11 Focus on You, 12 Free Play." },
+      { title: "Draw", body: "Take the top card. Want a choice? Draw two, keep one, and slide the other to the bottom of its pile." },
+      { title: "Read it out loud", body: "Every word, exactly as written. Saying it is half of it." },
+      { title: "Get an answer", body: "Do it, tweak it, save it, or pass. Either of you can pass. See The Four Answers." },
+      { title: "Play it", body: "Unless the card says otherwise, “you” means the roller and “your partner” means the other one. The time on the card is a floor. Keep going as long as it’s working." },
+      { title: "Clear it", body: "When you’re both ready to move on, the card goes on the Played pile. The partner becomes the roller." },
     ],
   },
   {
-    id: "answers", eyebrow: "Every card, every time", title: "The four answers", color: "#A68CF5",
-    lead: "There are exactly four things you can say to a card. All four are good answers.",
+    id: "answers", eyebrow: "What happens next", title: "The four answers", color: "#A68CF5",
+    lead: "Two passes in a row is information, not failure. Step down one category for the next roll.",
     rows: [
-      { title: "Do it", body: "Play the card exactly as written. This is the default answer, and most cards are written to make it an easy one." },
-      { title: "Tweak it", body: "Like the idea but not every detail? Change it. Swap the time, adjust the setting or trade roles. Say what you would change, agree on it, and go." },
-      { title: "Save it", body: "Good idea, wrong moment. Put the card on the Saved pile. You can come back to it later tonight or another night, and it stays in play until you decide otherwise." },
-      { title: "Pass", body: "Either of you can pass on any card at any time, and there is no limit on passes. Put it on Retired or back in the pile and the turn moves on. A pass is never a loss." },
+      { title: "Do it", body: "Play the card as written. The default, and usually the right call." },
+      { title: "Tweak it", body: "Change one detail, like the place, the pace or the part that doesn’t work, and play the rest. Agree on the change before you start, not halfway through." },
+      { title: "Save it", body: "You both want it, just not now. It goes on the Saved pile. Cards that need a morning, a car, a date or a hotel go here automatically, and the roller rolls again." },
+      { title: "Pass", body: "Either of you, any card, no reason. It goes to the bottom of its pile and the same roller rolls again. There is no limit on passes." },
     ],
   },
   {
-    id: "special", eyebrow: "Eleven and twelve", title: "Special rolls", color: "#E86BD8",
-    lead: "Ten of the twelve faces pair up into five categories. The last two faces each get a category of their own.",
+    id: "special", eyebrow: "Eleven, twelve & the odd ones", title: "Special rolls", color: "#E86BD8",
+    lead: "Your ceiling applies to every special roll. Dealer’s Choice can’t pick a card you left in the box.",
     rows: [
-      { title: "11: Focus on You", body: "An 11 puts the spotlight on one of you. The roller chooses who receives. The receiving partner reads the card and directs the details; the giving partner follows their lead." },
-      { title: "12: Free Play", body: "A 12 is the wild slot. Draw from the Free Play pile and follow the card. There are four kinds, and each one hands the roller a little authorial control." },
-      { title: "Dealer’s Choice", body: "The roller picks any card from the entire deck: any category, any spice level under your ceiling. You both play it." },
-      { title: "Double Draw", body: "Draw two cards from any two piles. Play them back to back, or blend them into one longer turn." },
-      { title: "Reverse Roles", body: "Play the next card drawn with the roles flipped. Whoever would normally give, receives, and the other way round." },
-      { title: "Free Play Create", body: "Write your own card. Say it out loud like any other, give it a category and a spice level, and play it. The best ones tend to get written down for later." },
+      { title: "11 · Focus on You", body: "Before drawing, the roller decides who receives: themselves or their partner. The receiver doesn’t reciprocate, doesn’t hurry and doesn’t apologize. The card ends when they say so." },
+      { title: "12 · Free Play", body: "Four cards that hand the night back to you. Dealer’s Choice: the roller looks through every pile and picks one card. Double Draw: roll twice, take one card from each pile and combine them. Reverse Roles: roll again; on that card, the partner does what the roller would have done. Free Play Create: invent something together, right now." },
+      { title: "All four played?", body: "Once the Free Play pile is empty, a 12 means the roller picks any card from any pile." },
+      { title: "Empty pile", body: "Roll again, or step one category up the ramp. Focus on You has only six cards, so it usually runs out first." },
     ],
   },
   {
-    id: "ending", eyebrow: "No score, no finish line", title: "Ending the night", color: "#FF6A3D",
-    lead: "The game ends when one of you says so. That can be after three cards or thirty.",
+    id: "ending", eyebrow: "How it ends", title: "Ending the night", color: "#FF6A3D",
+    lead: "No winner, no loser. The only score is whether you both want to play again.",
     rows: [
-      { title: "Call it when it feels right", body: "There is nothing to win and nothing to finish. When one of you says it is time, it is time. Stopping early is a perfectly good way to play." },
-      { title: "Look at the piles", body: "Flip through Played and Saved together. Saved is your shortlist for next time. Retired is worth a glance too, with no pressure attached." },
-      { title: "Reset the deck", body: "Shuffle everything back into the category piles, or leave the Saved pile aside so it is the first thing you draw next time. The die goes back in the bag." },
-      { title: "Talk about it", body: "A minute or two of what worked goes a long way. Keep it kind, keep it specific and keep it short." },
+      { title: "Either of you calls it", body: "Stop means stop. No last card, no explanation owed." },
+      { title: "The timer goes", body: "If you set one, it wins." },
+      { title: "You’re both done", body: "The most common ending, and the best one." },
+      { title: "The last five minutes", body: "Stay in the room. Water, closeness, a little talking." },
+      { title: "One keep, one retire", body: "Each of you names one card from tonight you’d play again, and one you never need to see. Retired cards go back in the box apart from the deck, until you both want them back." },
+      { title: "Reset", body: "Shuffle Played cards back into their piles. Keep the Saved pile on top of the box. Next time, start by drawing from it instead of rolling." },
     ],
   },
   {
-    id: "rules", eyebrow: "The part that matters most", title: "Ground rules", color: "#FFD23F",
-    lead: "Five rules that never change, whatever the card says.",
+    id: "rules", eyebrow: "Non-negotiable", title: "Ground rules", color: "#FFD23F",
+    lead: "Five things that make the rest of it work. For consenting adults. Play at your own pace. Stop whenever you want.",
     rows: [
-      { title: "Anyone can pass", body: "Any card, any time, no reason needed. Passing is built into the game, not a failure of it. The game only works because either of you can say no." },
-      { title: "Change the card", body: "If a card is close but not quite, tweak it. The words on the card are a starting point, not a script you owe anyone." },
-      { title: "Agree first", body: "Nothing starts until you both say yes to the card as it will actually be played. Agreement happens before, not during." },
-      { title: "Stop means stop", body: "If either of you says stop, everything stops right then. No finishing the card, no one more minute. Check in, then decide together what comes next." },
-      { title: "The last five minutes count", body: "How the night ends is what you will remember. Spend the last few minutes on each other, not on the tidy-up." },
+      { title: "Anyone can pass", body: "No reason needed and no penalty. Put the card back, roll again, move on. A pass is part of the game, not a failure at it." },
+      { title: "Change the card", body: "If most of a card sounds great and one detail does not, do the part that works. The cards are prompts, not instructions from management." },
+      { title: "Agree first, then play", body: "Talk about what is off the table before the first roll. Then stop negotiating and enjoy yourselves — mid-card is a bad time to renegotiate." },
+      { title: "Stop means stop", body: "Not slow down, not convince me. The game ends the moment either of you wants it to, with no discussion owed." },
+      { title: "The last five minutes count", body: "Stay in the room afterwards. How a night ends is most of what either of you will remember about it." },
+    ],
+  },
+  {
+    id: "house", eyebrow: "Six ways to change it", title: "House rules", color: "#FF5C8A",
+    lead: "Invent your own. The best house rule is the one you’d be embarrassed to explain to anyone else.",
+    rows: [
+      { title: "The ladder", body: "Ignore the die. Start at Soft Touch and climb one category per turn. Stop wherever you like." },
+      { title: "Category lock", body: "Pick one category before you start and stay there all night. Ignore the die entirely." },
+      { title: "Trade the roll", body: "Once per night, either of you can hand a roll to the other and make them take it." },
+      { title: "The save pile", body: "Set aside cards you both want but not tonight. Next time, start with that pile instead of rolling." },
+      { title: "Speed round", body: "Fifteen-minute timer, Spice 1 and 2 only. Built for weeknights when nobody has the energy for a whole evening." },
+      { title: "Blind draw", body: "Draw face down and commit before reading. High trust only, and never on a first play." },
     ],
   },
 ];
@@ -95,7 +107,7 @@ export default async function HowToPlay() {
         <div className="stack gap-12" style={{ maxWidth: 760 }}>
           <div className="eyebrow" style={{ color: "var(--primary)" }}>How to play</div>
           <h1 className="t-h2">Learn it in a minute.</h1>
-          <p className="t-lead" style={{ marginTop: 8 }}>Roll the die, draw a card from the matching pile, read it out loud, then do it, tweak it, save it or pass. Everything below is detail. The four steps are the game.</p>
+          <p className="t-lead" style={{ marginTop: 8 }}>The thirty-second version: roll the twelve-sided die, draw one or two cards from the matching category, read the card out loud, do it, tweak it or save it for later, then switch turns and keep going. That’s it. No complicated rules. Just better nights.</p>
         </div>
       </section>
 

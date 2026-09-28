@@ -26,8 +26,13 @@ function buildAction(b: Body, me: { id: string; name: string }): Action | string
   const str = (k: string) => (typeof b[k] === "string" ? (b[k] as string) : null);
   switch (b.type) {
     case "join": return { type: "join", userId: me.id, name: me.name };
-    case "leave": case "start": case "read": case "stop": case "end":
+    case "leave": case "start": case "read": case "stop": case "end": case "reroll": case "stepUp":
       return { type: b.type, userId: me.id };
+    case "chooseReceiver": {
+      const r = str("receiver");
+      if (r !== "roller" && r !== "partner") return "Who receives?";
+      return { type: "chooseReceiver", userId: me.id, receiver: r };
+    }
     case "setCeiling": {
       const n = Number(b.ceiling);
       if (!Number.isFinite(n)) return "Pick a ceiling from 1 to 5.";
@@ -77,24 +82,47 @@ export async function POST(req: Request, { params }: Params) {
     let systemNote: string | null = null;
     let deckCounts: Record<string, number> | null = null;
     try {
-      if (body.type === "draw") {
+      if (body.type === "draw" || body.type === "pickAny") {
         if (state.phase !== "draw") return fail("Not time to draw.");
         if (state.players[state.rollerIndex]?.userId !== me.id) return fail("It isn’t your draw.");
-        const count = Number(body.count) === 2 ? 2 : 1;
         const pool = await playablePool(state);
-        let eligible = pool.filter((c) => c.category === state.category);
-        if (!eligible.length && pool.length) {
-          eligible = pool;
-          systemNote = `No ${state.category} cards left under the ceiling — drew from the whole deck instead.`;
+        let cards;
+        if (body.type === "pickAny") {
+          /* Dealer's Choice: a 12 once the Free Play pile is empty */
+          if (state.specialMode !== "dealer") return fail("You can only pick any card on a Free Play roll with the pile empty.");
+          const code = typeof body.code === "string" ? body.code : "";
+          const card = pool.find((c) => c.code === code);
+          if (!card) return fail("That card isn’t available under tonight’s ceiling.");
+          cards = [card];
+        } else {
+          const count = Number(body.count) === 2 ? 2 : 1;
+          const eligible = state.specialMode === "dealer" ? pool : pool.filter((c) => c.category === state.category);
+          if (!eligible.length) {
+            next = { ...state, emptyPile: true };
+            deckCounts = countByCategory(pool);
+            const status0 = statusFor(next.phase);
+            await prisma.gameRoom.updateMany({ where: { id: room.id, version: room.version }, data: { state: toJson({ ...next, deckCounts: { ...Object.fromEntries(CATEGORIES.map((c) => [c, 0])), ...deckCounts } }), version: { increment: 1 }, status: status0 } });
+            return fail("That pile is empty under tonight’s ceiling. Roll again or step one category up the ramp.");
+          }
+          cards = sample(eligible, count);
         }
-        const cards = sample(eligible, count);
         next = reduce(state, { type: "draw", userId: me.id, cards });
         deckCounts = countByCategory(pool, new Set(cards.map((c) => c.code)));
       } else {
         const action = buildAction(body, me);
         if (typeof action === "string") return fail(action);
         next = reduce(state, action);
-        if (action.type === "start") deckCounts = countByCategory(await playablePool(next));
+        if (["start", "roll", "stepUp", "keep", "answer", "playSaved", "reroll", "chooseReceiver"].includes(action.type)) {
+          const pool = await playablePool(next);
+          deckCounts = countByCategory(pool);
+          /* rulebook: an empty pile means roll again or step up the ramp;
+             a 12 with no Free Play cards left means pick any card */
+          if ((action.type === "roll" || action.type === "stepUp") && next.category) {
+            const left = deckCounts[next.category] ?? 0;
+            if (next.category === "Free Play" && left === 0) { next.specialMode = "dealer"; next.emptyPile = false; }
+            else if (next.specialMode !== "dealer" && left === 0) { next.emptyPile = true; systemNote = `The ${next.category} pile is empty under the ceiling. Roll again or step one up the ramp.`; }
+          }
+        }
       }
     } catch (e) {
       return fail(e instanceof Error ? e.message : "That didn’t work.");

@@ -111,8 +111,12 @@ journalctl -u caddy -n 50       # if the certificate didn't issue
    Console and Bing verification strings.
 7. **Pages:** create privacy, terms, shipping, returns and paste your legal copy.
 8. **Products:** confirm the expansion price, upload the product photos.
-9. **Cards:** import the real 72-card deck via CSV (columns
-   `code,set,title,category,rarity,spice,time,text`).
+9. **Cards:** every card's set, category, rarity, spice and time are already
+   seeded from the print PDF. Add the printed titles and instructions in
+   Admin → Cards (or CSV import with columns
+   `code,set,title,category,rarity,spice,time,text`). With
+   `docs/Play Time Cards Print.pdf` in the repo, each deploy renders the
+   artwork for the online game automatically (`npm run cards:import`).
 
 ## 7. Deploying updates later
 

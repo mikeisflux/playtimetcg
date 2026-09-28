@@ -55,57 +55,46 @@ for (const d of setDefs) {
   sets[d.slug] = await prisma.cardSet.upsert({ where: { slug: d.slug }, update: { name: d.name, kind: d.kind, accent: d.accent, sortIndex: d.sortIndex }, create: d });
 }
 
-/* ───── cards: the seven published samples + numbered placeholders so the
-   base deck is 72 cards. Replace the placeholders in Admin → Cards (or
-   import the real deck as CSV). ───── */
+/* ───── cards: all 144 from the print PDF (design/cards/cards-meta.json —
+   set, code, category, rarity, spice, time). Titles and instructions are
+   printed in the artwork; until they are transcribed (Admin → Cards or CSV
+   import) placeholders are used, and edited titles are never overwritten. ───── */
 const game = JSON.parse(readFileSync(new URL("../design/handoff/content/game.json", import.meta.url), "utf8"));
 const catalog = JSON.parse(readFileSync(new URL("../design/handoff/content/catalog.json", import.meta.url), "utf8"));
-const categories = game.die.map((d) => d.category);
+const meta = JSON.parse(readFileSync(new URL("../design/cards/cards-meta.json", import.meta.url), "utf8"));
 const sampleByCode = Object.fromEntries(game.sampleCards.map((c) => [c.id, c]));
-/* category distribution across 72 cards: 12/12/12/12/12/6/6 (matching die odds) */
-const dist = { "Soft Touch": 12, "Flirty Fun": 12, "Classic Heat": 12, "Turn It Up": 12, "Wild Card": 12, "Focus on You": 6, "Free Play": 6 };
-let n = 1;
-let baseCount = 0;
-for (const cat of categories) {
-  for (let i = 0; i < dist[cat]; i++, n++) {
-    const code = `B${String(n).padStart(3, "0")}`;
-    const sample = sampleByCode[code] && sampleByCode[code].category === cat ? sampleByCode[code] : null;
-    const rarity = sample ? sample.rarity : (i % 6 === 5 ? "Rare" : i % 3 === 2 ? "Uncommon" : "Common");
-    const data = sample
-      ? { title: sample.title, category: cat, rarity, spice: sample.spice, time: sample.time, text: sample.text }
-      : { title: `${cat} ${i + 1}`, category: cat, rarity, spice: Math.min(5, 1 + Math.floor(i / 3)), time: "10 min", text: `Card text for ${code} is added in Admin → Cards. This placeholder keeps the online deck at 72 cards until the real copy is imported.` };
-    await prisma.card.upsert({
-      where: { code },
-      update: sample ? data : { category: cat }, /* never overwrite edited placeholders */
-      create: { code, setId: sets.base.id, sortIndex: n, ...data },
-    });
-    baseCount++;
-  }
-}
-/* samples whose code sits outside the distribution slot still need to exist */
-for (const c of game.sampleCards) {
+const perSetIndex = {};
+let cardCount = 0;
+for (const m of meta) {
+  const set = sets[m.set];
+  if (!set) continue;
+  const k = `${m.set}:${m.category}`;
+  perSetIndex[k] = (perSetIndex[k] ?? 0) + 1;
+  const sample = sampleByCode[m.code];
+  const placeholderTitle = `${m.category} ${perSetIndex[k]}`;
+  const placeholderText = `Card text for ${m.code} is printed on the card. Add it in Admin → Cards (or import the CSV) to show it online.`;
+  const existing = await prisma.card.findUnique({ where: { code: m.code } });
+  const isPlaceholder = !existing || /^Card text for /.test(existing.text);
   await prisma.card.upsert({
-    where: { code: c.id },
-    update: { title: c.title, category: c.category, rarity: c.rarity, spice: c.spice, time: c.time, text: c.text },
-    create: { code: c.id, setId: sets.base.id, title: c.title, category: c.category, rarity: c.rarity, spice: c.spice, time: c.time, text: c.text, sortIndex: Number(c.id.slice(1)) },
+    where: { code: m.code },
+    update: {
+      setId: set.id, category: m.category, rarity: m.rarity, spice: m.spice, time: m.time, sortIndex: m.page,
+      ...(sample ? { title: sample.title, text: sample.text } : isPlaceholder ? { title: placeholderTitle, text: placeholderText } : {}),
+    },
+    create: {
+      code: m.code, setId: set.id, sortIndex: m.page, category: m.category, rarity: m.rarity, spice: m.spice, time: m.time,
+      title: sample ? sample.title : placeholderTitle, text: sample ? sample.text : placeholderText,
+    },
   });
+  cardCount++;
 }
-console.log(`✔ Base set: ${baseCount} cards ensured (7 published samples, rest placeholders).`);
-
-/* expansion placeholders: 12 cards each */
-const expPrefix = { "date-night": "DN", weekend: "WG", "long-term": "LT", quick: "QD", toy: "TF", travel: "TR" };
-for (const [slug, prefix] of Object.entries(expPrefix)) {
-  for (let i = 1; i <= 12; i++) {
-    const code = `${prefix}${String(i).padStart(2, "0")}`;
-    const cat = categories.filter((c) => c !== "Free Play")[(i - 1) % 6];
-    await prisma.card.upsert({
-      where: { code },
-      update: {},
-      create: { code, setId: sets[slug].id, sortIndex: i, title: `${sets[slug].name} ${i}`, category: cat, rarity: i % 6 === 0 ? "Rare" : i % 3 === 0 ? "Uncommon" : "Common", spice: Math.min(5, 1 + Math.floor(i / 3)), time: "10 min", text: `Card text for ${code} is added in Admin → Cards.` },
-    });
-  }
+/* retire the pre-print placeholder codes (DN01…, WG01…, LT01…, QD01…, TF01…, TR01…TR12) */
+const stale = await prisma.card.findMany({ where: { code: { in: [...["DN", "WG", "LT", "QD", "TF", "TR"].flatMap((p) => Array.from({ length: 12 }, (_, i) => `${p}${String(i + 1).padStart(2, "0")}`))] } }, include: { _count: { select: { owners: true } } } });
+for (const c of stale) {
+  if (c._count.owners) await prisma.card.update({ where: { id: c.id }, data: { active: false } });
+  else await prisma.card.delete({ where: { id: c.id } });
 }
-console.log("✔ Expansion sets: 6 × 12 placeholder cards ensured.");
+console.log(`✔ ${cardCount} cards ensured from the print PDF metadata${stale.length ? ` (${stale.length} old placeholders retired)` : ""}.`);
 
 /* ───── products ───── */
 let sort = 0;
@@ -138,13 +127,12 @@ await prisma.product.upsert({
   where: { slug: "monthly-cards" }, update: {},
   create: { slug: "monthly-cards", kind: "subscription", subPlan: "monthly_cards", subInterval: "month", name: "Monthly 3-card drop", tag: "3 new cards every month, shipped", priceCents: 700, accent: "#E86BD8", digital: false, includes: ["Three brand-new physical cards each month", "Ships discreetly", "Cancel anytime"], description: "A small envelope every month with three cards that aren’t in any pack. Keep the deck growing.", sortIndex: sort++ },
 });
-for (const [slug, prefix] of Object.entries(expPrefix)) {
+for (const slug of ["date-night", "weekend", "long-term", "quick", "toy", "travel"]) {
   const setRow = sets[slug];
   await prisma.product.upsert({
     where: { slug: `digital-${slug}` }, update: {},
     create: { slug: `digital-${slug}`, kind: "digital_pack", name: `${setRow.name} — digital pack`, tag: "3 random cards from the set", priceCents: 299, accent: setRow.accent, digital: true, cardSetId: setRow.id, packSize: 3, includes: ["3 cards from " + setRow.name, "Tear it open on screen", "Added to your collection instantly"], sortIndex: sort++ },
   });
-  void prefix;
 }
 console.log("✔ Products ensured (3 sets, 6 expansions, 2 subscriptions, 6 digital packs).");
 

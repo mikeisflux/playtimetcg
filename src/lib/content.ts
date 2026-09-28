@@ -68,6 +68,7 @@ export interface CardData {
   time: string;
   text: string;
   set?: string;
+  art?: string | null; // full-card artwork, served only to players who own it
 }
 
 export const SAMPLE_CARDS: CardData[] = [

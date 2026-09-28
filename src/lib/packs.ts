@@ -4,7 +4,7 @@ import { getSetting, flag } from "./settings";
 import type { Card } from "@/generated/prisma/client";
 
 export interface OpenedCard {
-  code: string; title: string; rarity: string; category: string; spice: number; time: string; text: string; isNew: boolean;
+  code: string; title: string; rarity: string; category: string; spice: number; time: string; text: string; isNew: boolean; art: string | null;
 }
 
 async function weights(): Promise<Record<string, number>> {
@@ -65,7 +65,7 @@ export async function grantCards(userId: string, cards: Card[], source: string):
       update: { qty: { increment: 1 } },
       create: { userId, cardId: c.id, qty: 1, source },
     });
-    result.push({ code: c.code, title: c.title, rarity: c.rarity, category: c.category, spice: c.spice, time: c.time, text: c.text, isNew });
+    result.push({ code: c.code, title: c.title, rarity: c.rarity, category: c.category, spice: c.spice, time: c.time, text: c.text, isNew, art: c.imageUrl ? `/api/cards/art/${c.code}` : null });
   }
   return result;
 }
