@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { cart, useCart } from "@/lib/cartStore";
 import { money } from "@/lib/content";
+import DivinityCheckoutFrame from "./DivinityCheckoutFrame";
 
 interface Quote { subtotalCents: number; shippingCents: number; taxCents: number; totalCents: number; needsShipping: boolean; problems: string[] }
 interface Me { id: string; email: string; name: string; creditsAvailable: number | null; address: Record<string, string> | null }
@@ -12,6 +13,7 @@ export default function Checkout({ me, allowCredits, discreet }: { me: Me | null
   const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState<"" | "divinity" | "credits">("");
   const [err, setErr] = useState("");
+  const [embed, setEmbed] = useState<{ url: string; sessionId: string; orderId: string } | null>(null);
   const payload = lines.map((l) => ({ id: l.id, qty: l.qty, choices: l.choices }));
 
   useEffect(() => {
@@ -43,8 +45,26 @@ export default function Checkout({ me, allowCredits, discreet }: { me: Me | null
     const res = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { setErr(data.error || "Checkout failed."); setBusy(""); return; }
+    if (data.embed && data.sessionId && data.orderId) {
+      /* DivinityCoin's checkout opens inside this page; the cart is cleared once it confirms */
+      setEmbed({ url: data.url, sessionId: data.sessionId, orderId: data.orderId });
+      setBusy("");
+      return;
+    }
     cart.clear();
     window.location.href = data.url;
+  }
+
+  if (embed) {
+    return (
+      <div className="grid g-420" style={{ gap: "clamp(32px, 5vw, 72px)", alignItems: "start" }}>
+        <div className="stack gap-16">
+          <div className="t-item">Pay with DivinityCoin</div>
+          <DivinityCheckoutFrame checkoutUrl={embed.url} sessionId={embed.sessionId} confirmPath="/api/checkout/confirm" confirmBody={{ orderId: embed.orderId }} onCancel={() => setEmbed(null)} />
+        </div>
+        <Summary lines={lines} quote={quote} />
+      </div>
+    );
   }
 
   const a = me?.address ?? {};
@@ -83,37 +103,45 @@ export default function Checkout({ me, allowCredits, discreet }: { me: Me | null
         <div className="field"><label htmlFor="notes">Order notes (optional)</label><textarea className="input" id="notes" name="notes" maxLength={1000} style={{ minHeight: 80 }} /></div>
       </div>
 
-      <div className="panel panel--surface" style={{ position: "sticky", top: 88 }}>
-        <div className="t-item">Summary</div>
-        <div className="stack">
-          {lines.map((l) => (
-            <div key={cart.key(l)} className="row" style={{ justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--rule)", flexWrap: "nowrap" }}>
-              <div className="min0"><div className="t-item-sm">{l.name} × {l.qty}</div>{l.choiceNames?.length ? <div className="line__unit">{l.choiceNames.join(" + ")}</div> : null}</div>
-              <div className="mono" style={{ fontSize: 14 }}>{money(l.priceCents * l.qty)}</div>
-            </div>
-          ))}
-        </div>
-        {quote && (
-          <div className="stack" style={{ gap: 6, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}><span>Subtotal</span><span>{money(quote.subtotalCents)}</span></div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}><span>Shipping</span><span>{quote.needsShipping ? (quote.shippingCents ? money(quote.shippingCents) : "Free") : "—"}</span></div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}><span>Tax</span><span>{quote.taxCents ? money(quote.taxCents) : "—"}</span></div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingTop: 10, borderTop: "2px solid var(--rule)", marginTop: 6 }}>
-              <span className="label" style={{ fontSize: 12 }}>Total</span><span className="subtotal">{money(quote.totalCents)}</span>
-            </div>
-            {quote.problems.map((p) => <div key={p} className="note note--err">{p}</div>)}
-          </div>
-        )}
+      <Summary lines={lines} quote={quote}>
         {err && <div className="note note--err" role="alert">{err}</div>}
-        <button className="btn" disabled={!!busy || !quote || quote.problems.length > 0}>{busy === "divinity" ? "Sending you to DivinityCoin…" : "Pay with DivinityCoin"}</button>
+        <button className="btn" disabled={!!busy || !quote || quote.problems.length > 0}>{busy === "divinity" ? "Opening secure checkout…" : "Pay with DivinityCoin"}</button>
         {me && allowCredits && me.creditsAvailable !== null && (
           <button type="button" className="btn btn--outline" disabled={!!busy || !canCredits}
             onClick={(e) => { const form = (e.currentTarget as HTMLButtonElement).form!; if (!form.reportValidity()) return; submit({ preventDefault() {}, currentTarget: form } as unknown as React.FormEvent<HTMLFormElement>, "credits"); }}>
             {busy === "credits" ? "Paying…" : `Pay with credits (${money(Math.round(me.creditsAvailable * 100))} available)`}
           </button>
         )}
-        <div className="note">You’ll be taken to DivinityCoin to pay, then straight back here. We never see your card details.</div>
-      </div>
+        <div className="note">Payment opens right here on this page, handled by DivinityCoin. We never see your card details.</div>
+      </Summary>
     </form>
+  );
+}
+
+function Summary({ lines, quote, children }: { lines: ReturnType<typeof useCart>["lines"]; quote: Quote | null; children?: React.ReactNode }) {
+  return (
+    <div className="panel panel--surface" style={{ position: "sticky", top: 88 }}>
+      <div className="t-item">Summary</div>
+      <div className="stack">
+        {lines.map((l) => (
+          <div key={cart.key(l)} className="row" style={{ justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--rule)", flexWrap: "nowrap" }}>
+            <div className="min0"><div className="t-item-sm">{l.name} × {l.qty}</div>{l.choiceNames?.length ? <div className="line__unit">{l.choiceNames.join(" + ")}</div> : null}</div>
+            <div className="mono" style={{ fontSize: 14 }}>{money(l.priceCents * l.qty)}</div>
+          </div>
+        ))}
+      </div>
+      {quote && (
+        <div className="stack" style={{ gap: 6, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>Subtotal</span><span>{money(quote.subtotalCents)}</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>Shipping</span><span>{quote.needsShipping ? (quote.shippingCents ? money(quote.shippingCents) : "Free") : "—"}</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>Tax</span><span>{quote.taxCents ? money(quote.taxCents) : "—"}</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingTop: 10, borderTop: "2px solid var(--rule)", marginTop: 6 }}>
+            <span className="label" style={{ fontSize: 12 }}>Total</span><span className="subtotal">{money(quote.totalCents)}</span>
+          </div>
+          {quote.problems.map((p) => <div key={p} className="note note--err">{p}</div>)}
+        </div>
+      )}
+      {children}
+    </div>
   );
 }

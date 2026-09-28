@@ -33,8 +33,8 @@ export async function POST(req: Request) {
       await payWithCredits(order.id, user.id);
       return NextResponse.json({ ok: true, url: `${await siteUrl()}/checkout/success?order=${order.id}` });
     }
-    const { url } = await startCheckout(order.id);
-    return NextResponse.json({ ok: true, url, orderId: order.id });
+    const { url, sessionId } = await startCheckout(order.id, { embed: body.embed !== false });
+    return NextResponse.json({ ok: true, url, orderId: order.id, sessionId, embed: body.embed !== false && !!sessionId });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: err instanceof Error ? err.message : "Checkout failed." }, { status: 400 });

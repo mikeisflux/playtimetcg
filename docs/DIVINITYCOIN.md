@@ -25,6 +25,29 @@ is JSON, e.g. `{"error":"Invalid or expired API key"}` or
 `{"error":"Partner account is not active"}` (activate the partner in the
 DivinityCoin admin).
 
+## Embedded checkout (the shopper never leaves playtimetcg.com)
+
+The hosted checkout is mounted in an iframe on `/checkout` and
+`/checkout/subscribe` (`src/components/DivinityCheckoutFrame.tsx`), the same
+way IndieCrowdfund embeds it. The session is created with
+`disableAutoRedirect: true`; DivinityCoin's page talks to ours with
+`postMessage` (namespace `divinitycoin-checkout`: `ready`, `resize`,
+`complete`). On `complete` we call `/api/checkout/confirm` (or
+`/api/subscriptions/confirm`), which asks DivinityCoin for the authoritative
+session state (`get-checkout-session`) and settles the order or charges the
+first subscription period, then navigates to the success page. A slow poll
+backs the message up, and if the frame never loads a button reopens a
+non-embedded session in the tab.
+
+**DivinityCoin side:** its proxy sends `Content-Security-Policy:
+frame-ancestors` on `/checkout/*` from the `CHECKOUT_FRAME_ANCESTORS`
+environment variable. It must include our origin or the browser blocks the
+frame:
+
+```
+CHECKOUT_FRAME_ANCESTORS="https://indiecrowdfund.com https://*.indiecrowdfund.com https://playtimetcg.com https://www.playtimetcg.com"
+```
+
 ## Units
 
 Card-side calls and events (`create-checkout-session`, `refund`,
@@ -91,7 +114,7 @@ loop off (e.g. on a second server).
 
 ## Test mode
 
-With `DIVINITYCOIN_TEST_MODE=true` the redirect goes to `/checkout/simulate`,
+With `DIVINITYCOIN_TEST_MODE=true` the frame loads `/checkout/simulate` (same postMessage protocol),
 which posts correctly signed `payment.succeeded` / `payment.failed` (orders)
 or setup-mode `checkout.completed` (subscriptions) events to our webhook, and
 saved-card charges succeed without calling DivinityCoin. Turn it off to use

@@ -43,10 +43,11 @@ export interface CheckoutInput {
   returnUrl: string;       // DivinityCoin appends ?session_id=cs_…
   cancelUrl: string;
   expiresInMinutes?: number;
+  embed?: boolean;         // mounted in an iframe on our page: DivinityCoin posts "complete" instead of navigating
 }
 export interface CheckoutResult { success: boolean; checkoutUrl?: string; sessionId?: string; expiresAt?: string; error?: string }
 
-export interface SetupInput { reference: string; email: string; customerId: string; description: string; returnUrl: string; cancelUrl: string }
+export interface SetupInput { reference: string; email: string; customerId: string; description: string; returnUrl: string; cancelUrl: string; embed?: boolean }
 
 export interface CheckoutSession {
   sessionId: string; status: "pending" | "complete" | "expired" | "canceled" | "failed";
@@ -152,6 +153,8 @@ class DivinityCoinClient {
         pledgeId: input.reference, projectId: DC_PROJECT_ID,
         returnUrl: input.returnUrl, cancelUrl: input.cancelUrl, description: input.description,
         expiresInMinutes: input.expiresInMinutes ?? 60,
+        partnerLogoUrl: `${c.webhookUrl.replace(/\/api\/webhooks\/divinitycoin$/, "")}/icon-512.png`,
+        ...(input.embed ? { disableAutoRedirect: true } : {}),
       });
       if (!d.checkoutUrl) return { success: false, error: "DivinityCoin did not return a checkout URL." };
       return { success: true, checkoutUrl: d.checkoutUrl, sessionId: d.sessionId, expiresAt: d.expiresAt };
@@ -169,6 +172,8 @@ class DivinityCoinClient {
       const d = await this.call<{ success: boolean; sessionId: string; checkoutUrl: string; expiresAt: string }>("create-checkout-session", {
         platformUserId: input.customerId, email: input.email, mode: "setup",
         returnUrl: input.returnUrl, cancelUrl: input.cancelUrl, description: input.description, expiresInMinutes: 60,
+        partnerLogoUrl: `${c.webhookUrl.replace(/\/api\/webhooks\/divinitycoin$/, "")}/icon-512.png`,
+        ...(input.embed ? { disableAutoRedirect: true } : {}),
       });
       if (!d.checkoutUrl) return { success: false, error: "DivinityCoin did not return a checkout URL." };
       return { success: true, checkoutUrl: d.checkoutUrl, sessionId: d.sessionId, expiresAt: d.expiresAt };

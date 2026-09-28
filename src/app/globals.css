@@ -502,3 +502,7 @@ select.input { appearance: none; }
 .deckfan__card.on { opacity: 1; }
 .deckfan__card.pick { opacity: 1; transform: translateY(-8px); outline: 2px solid var(--text-strong); }
 @media (max-width: 600px) { .deckfan__card { width: 16px; height: 24px; } }
+
+/* ── Embedded DivinityCoin checkout ── */
+.dcframe { position: relative; width: 100%; background: var(--surface); border: 2px solid var(--rule); transition: height 200ms ease; min-height: 320px; }
+.dcframe__veil { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; gap: 16px; align-items: flex-start; justify-content: center; padding: 24px; background: var(--surface); }

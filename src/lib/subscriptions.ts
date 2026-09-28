@@ -28,7 +28,7 @@ function addInterval(from: Date, interval: string): Date {
 
 /* Step 1: create the pending subscription and send the shopper to a
    setup-mode checkout to save a card. */
-export async function startSubscription(userId: string, productId: string, shipping?: ShippingInput | null): Promise<{ url: string; subscriptionId: string }> {
+export async function startSubscription(userId: string, productId: string, shipping?: ShippingInput | null, opts: { embed?: boolean } = {}): Promise<{ url: string; subscriptionId: string; sessionId: string | null }> {
   const [user, product] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
     prisma.product.findUnique({ where: { id: productId } }),
@@ -41,7 +41,8 @@ export async function startSubscription(userId: string, productId: string, shipp
     data: { userId, plan: product.subPlan, status: "pending", priceCents: product.priceCents, interval: product.subInterval || "month", shipping: shipping ? JSON.parse(JSON.stringify(shipping)) : undefined },
   });
   try {
-    return { url: await setupCheckoutUrl(sub.id, user.email, user.id, product.name), subscriptionId: sub.id };
+    const r = await setupCheckoutUrl(sub.id, user.email, user.id, product.name, opts.embed);
+    return { url: r.url, sessionId: r.sessionId, subscriptionId: sub.id };
   } catch (err) {
     await prisma.subscription.delete({ where: { id: sub.id } }).catch(() => {});
     throw err;
@@ -49,14 +50,14 @@ export async function startSubscription(userId: string, productId: string, shipp
 }
 
 /* Re-open the card setup for a still-pending subscription. */
-export async function resumeSubscriptionSetup(subId: string, userId: string): Promise<string> {
+export async function resumeSubscriptionSetup(subId: string, userId: string, embed = false): Promise<{ url: string; sessionId: string | null }> {
   const sub = await prisma.subscription.findFirst({ where: { id: subId, userId }, include: { user: true } });
   if (!sub || sub.status !== "pending") throw new Error("This subscription can’t be resumed.");
   const product = await prisma.product.findFirst({ where: { kind: "subscription", subPlan: sub.plan, active: true } });
-  return setupCheckoutUrl(sub.id, sub.user.email, sub.userId, product?.name ?? planLabel(sub.plan));
+  return setupCheckoutUrl(sub.id, sub.user.email, sub.userId, product?.name ?? planLabel(sub.plan), embed);
 }
 
-async function setupCheckoutUrl(subId: string, email: string, userId: string, productName: string): Promise<string> {
+async function setupCheckoutUrl(subId: string, email: string, userId: string, productName: string, embed = false): Promise<{ url: string; sessionId: string | null }> {
   const s = await getSettings(["SITE_URL", "SITE_NAME"]);
   const base = (s.SITE_URL || "https://playtimetcg.com").replace(/\/$/, "");
   const res = await divinitycoin.createSetupCheckout({
@@ -64,10 +65,32 @@ async function setupCheckoutUrl(subId: string, email: string, userId: string, pr
     description: `${s.SITE_NAME || "Play Time"} — ${productName} (${money((await prisma.subscription.findUnique({ where: { id: subId } }))?.priceCents ?? 0)} per period, cancel anytime)`,
     returnUrl: `${base}/account/subscriptions?started=${subId}`,
     cancelUrl: `${base}/account/subscriptions?cancelled=${subId}`,
+    embed,
   });
   if (!res.success || !res.checkoutUrl) throw new Error(res.error || "Could not start DivinityCoin checkout.");
   await prisma.subscription.update({ where: { id: subId }, data: { providerRef: res.sessionId ? `cs:${res.sessionId}` : null } });
-  return res.checkoutUrl;
+  return { url: res.checkoutUrl, sessionId: res.sessionId ?? null };
+}
+
+/* Embedded-frame confirm (and account-page self-heal): ask DivinityCoin how
+   the setup session ended; on complete, keep the card and charge the first
+   period. Idempotent with the checkout.completed webhook. */
+export type SetupOutcome = { ok: true; status: "complete" } | { ok: false; status: "pending" | "failed" | "expired" | "canceled" | "unknown"; message: string };
+export async function confirmSubscriptionSetup(subId: string, userId: string, sessionId: string): Promise<SetupOutcome> {
+  const sub = await prisma.subscription.findFirst({ where: { id: subId, userId } });
+  if (!sub) return { ok: false, status: "unknown", message: "Subscription not found." };
+  if (sub.status === "active") return { ok: true, status: "complete" };
+  if (sessionId.startsWith("cs_test_")) return sub.status === "active" ? { ok: true, status: "complete" } : { ok: false, status: "pending", message: "Waiting for the simulated webhook." };
+  if (sub.providerRef !== `cs:${sessionId}` && !sub.providerRef?.startsWith("pm:")) return { ok: false, status: "unknown", message: "That checkout session doesn’t belong to this subscription." };
+  const sess = await divinitycoin.getCheckoutSession(sessionId);
+  if (!sess) return { ok: false, status: "unknown", message: "DivinityCoin has no checkout session for this subscription." };
+  if (sess.status === "pending") return { ok: false, status: "pending", message: "Card setup is still in progress." };
+  if (sess.status !== "complete") return { ok: false, status: sess.status, message: sess.status === "failed" ? "Your card couldn’t be saved. Please try a different card." : sess.status === "expired" ? "The session expired. Please try again." : "Setup was cancelled. Nothing was charged." };
+  if (!sess.paymentMethodId) return { ok: false, status: "unknown", message: "DivinityCoin didn’t return a saved card. Please try again." };
+  const r = await onSubscriptionSetupComplete({ sessionId, mode: "setup", paymentMethodId: sess.paymentMethodId });
+  const fresh = await prisma.subscription.findUnique({ where: { id: subId } });
+  if (fresh?.status === "active") return { ok: true, status: "complete" };
+  return { ok: false, status: "failed", message: r.note?.startsWith("first charge failed") ? `Your card was saved but the first charge was declined (${r.note.replace("first charge failed: ", "")}).` : "The first charge didn’t go through. Try another card from your account page." };
 }
 
 /* Step 2 (webhook checkout.completed, mode=setup): remember the card and
@@ -75,7 +98,10 @@ async function setupCheckoutUrl(subId: string, email: string, userId: string, pr
 export async function onSubscriptionSetupComplete(d: DivinityWebhookEvent["data"]): Promise<{ status: "processed" | "ignored"; note?: string }> {
   const sessionId = String(d.sessionId || "");
   const sub = sessionId ? await prisma.subscription.findFirst({ where: { providerRef: `cs:${sessionId}` } }) : null;
-  if (!sub) return { status: "ignored", note: "no subscription for setup session" };
+  if (!sub) {
+    /* already converted to pm:… by the embedded-frame confirm → idempotent */
+    return { status: "ignored", note: "no pending subscription for setup session (already confirmed?)" };
+  }
   if (!d.paymentMethodId) return { status: "ignored", note: "setup completed without a payment method" };
   await prisma.subscription.update({ where: { id: sub.id }, data: { providerRef: `pm:${d.paymentMethodId}` } });
   const r = await chargePeriod(sub.id, new Date());

@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
     if (action === "resume" && sub.status === "pending") {
-      try { return NextResponse.json({ ok: true, url: await resumeSubscriptionSetup(sub.id, user.id) }); }
+      try { const r = await resumeSubscriptionSetup(sub.id, user.id, false); return NextResponse.json({ ok: true, url: r.url }); }
       catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : "Could not start checkout." }, { status: 502 }); }
     }
     return NextResponse.json({ error: "Unknown action." }, { status: 400 });

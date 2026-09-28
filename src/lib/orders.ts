@@ -91,7 +91,7 @@ export async function createOrder(input: {
 /* Start a DivinityCoin hosted checkout for an order. DivinityCoin sends the
    shopper back to returnUrl with ?session_id=cs_… and fires
    checkout.completed + payment.succeeded to our webhook. */
-export async function startCheckout(orderId: string): Promise<{ url: string }> {
+export async function startCheckout(orderId: string, opts: { embed?: boolean } = {}): Promise<{ url: string; sessionId: string | null }> {
   const order = await prisma.order.findUnique({ where: { id: orderId }, include: { items: true } });
   if (!order) throw new Error("Order not found.");
   if (order.status === "paid" || order.status === "fulfilled") throw new Error("This order is already paid.");
@@ -106,10 +106,11 @@ export async function startCheckout(orderId: string): Promise<{ url: string }> {
     description: `${s.SITE_NAME || "Play Time"} order #${order.number} — ${order.items.map((i) => `${i.name} × ${i.qty}`).join(", ")}`.slice(0, 200),
     returnUrl: `${base}/checkout/success?order=${order.id}`,
     cancelUrl: `${base}/checkout/cancel?order=${order.id}`,
+    embed: opts.embed,
   });
   if (!res.success || !res.checkoutUrl) throw new Error(res.error || "Could not start DivinityCoin checkout.");
   await prisma.order.update({ where: { id: order.id }, data: { status: "awaiting_payment", paymentMethod: "divinitycoin_checkout", paymentRef: res.sessionId ?? null } });
-  return { url: res.checkoutUrl };
+  return { url: res.checkoutUrl, sessionId: res.sessionId ?? null };
 }
 
 /* DivinityCoin keys credit balances by platformUserId. Signed-in shoppers use
@@ -287,16 +288,26 @@ async function settleCheckoutPayment(orderId: string, paymentIntentId: string | 
   void amountCents;
 }
 
-/* Success-page self-heal: confirm a hosted checkout with DivinityCoin when
-   the shopper is back before the webhook. Idempotent. */
-export async function confirmCheckoutSession(orderId: string, sessionId: string): Promise<boolean> {
+/* Authoritative outcome of a hosted checkout, asked of DivinityCoin (which
+   self-heals against the processor). Used by the embedded frame's confirm
+   call and by the success page. Settles the order when complete. */
+export type CheckoutOutcome = { ok: true; status: "complete" } | { ok: false; status: "pending" | "failed" | "expired" | "canceled" | "unknown"; message: string };
+export async function confirmCheckoutSession(orderId: string, sessionId: string): Promise<CheckoutOutcome> {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
-  if (!order) return false;
-  if (["paid", "fulfilled", "shipped"].includes(order.status)) return true;
-  if (!sessionId.startsWith("cs_") || sessionId.startsWith("cs_test_")) return false;
+  if (!order) return { ok: false, status: "unknown", message: "Order not found." };
+  if (["paid", "fulfilled", "shipped"].includes(order.status)) return { ok: true, status: "complete" };
+  if (sessionId.startsWith("cs_test_")) {
+    /* test mode: the simulator already posted the webhook */
+    return ["paid", "fulfilled", "shipped"].includes(order.status) ? { ok: true, status: "complete" } : { ok: false, status: "pending", message: "Waiting for the simulated webhook." };
+  }
+  if (!sessionId.startsWith("cs_") || (order.paymentRef && order.paymentRef.startsWith("cs_") && order.paymentRef !== sessionId)) return { ok: false, status: "unknown", message: "That checkout session doesn’t belong to this order." };
   const sess = await divinitycoin.getCheckoutSession(sessionId);
-  if (!sess || sess.pledgeId !== order.id || sess.status !== "complete") return false;
-  if (sess.amount !== null && sess.amount < order.totalCents) return false;
+  if (!sess || sess.pledgeId !== order.id) return { ok: false, status: "unknown", message: "DivinityCoin has no checkout for this order." };
+  if (sess.status === "pending") return { ok: false, status: "pending", message: "Checkout is still in progress." };
+  if (sess.status === "failed") return { ok: false, status: "failed", message: "Your card couldn’t be processed. Please try a different card." };
+  if (sess.status === "expired") return { ok: false, status: "expired", message: "The checkout session expired. Please try again." };
+  if (sess.status === "canceled") return { ok: false, status: "canceled", message: "Checkout was cancelled. Nothing was charged." };
+  if (sess.amount !== null && sess.amount < order.totalCents) return { ok: false, status: "unknown", message: "The amount paid doesn’t match the order. Contact us." };
   await settleCheckoutPayment(order.id, sess.paymentIntentId ?? undefined, sess.amount ?? undefined);
-  return true;
+  return { ok: true, status: "complete" };
 }

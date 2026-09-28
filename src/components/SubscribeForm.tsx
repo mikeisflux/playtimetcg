@@ -1,9 +1,11 @@
 "use client";
 import { useState } from "react";
+import DivinityCheckoutFrame from "./DivinityCheckoutFrame";
 
 export default function SubscribeForm({ productId, needsShipping, address }: { productId: string; needsShipping: boolean; address: Record<string, string> }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [embed, setEmbed] = useState<{ url: string; sessionId: string; subscriptionId: string } | null>(null);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault(); setBusy(true); setErr("");
     const f = new FormData(e.currentTarget);
@@ -11,9 +13,18 @@ export default function SubscribeForm({ productId, needsShipping, address }: { p
     const res = await fetch("/api/subscriptions/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId, shipping }) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { setErr(data.error || "Could not start the subscription."); setBusy(false); return; }
+    if (data.embed && data.sessionId && data.subscriptionId) { setEmbed({ url: data.url, sessionId: data.sessionId, subscriptionId: data.subscriptionId }); setBusy(false); return; }
     window.location.href = data.url;
   }
   const a = address;
+  if (embed) {
+    return (
+      <div className="stack gap-16">
+        <div className="t-item">Save a card with DivinityCoin</div>
+        <DivinityCheckoutFrame checkoutUrl={embed.url} sessionId={embed.sessionId} confirmPath="/api/subscriptions/confirm" confirmBody={{ subscriptionId: embed.subscriptionId }} title="Save your card" onCancel={() => setEmbed(null)} />
+      </div>
+    );
+  }
   return (
     <form className="form" onSubmit={submit}>
       {needsShipping && (
@@ -35,7 +46,7 @@ export default function SubscribeForm({ productId, needsShipping, address }: { p
         </>
       )}
       {err && <div className="note note--err">{err}</div>}
-      <button className="btn" disabled={busy}>{busy ? "Sending you to DivinityCoin…" : "Continue to DivinityCoin"}</button>
+      <button className="btn" disabled={busy}>{busy ? "Opening secure checkout…" : "Continue to payment"}</button>
     </form>
   );
 }
