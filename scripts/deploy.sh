@@ -247,6 +247,7 @@ build_app() {
   mkdir -p public/uploads
 }
 
+main() {
 cmd="${1:-deploy}"
 case "$cmd" in
   setup)
@@ -278,7 +279,11 @@ case "$cmd" in
   deploy)
     cd "$APP_DIR" || fail "APP_DIR ${APP_DIR} not found — run setup first."
     ensure_node; ensure_pm2; ensure_swap; load_env
-    pull_code
+    if [ -z "${DEPLOY_PULLED:-}" ]; then
+      pull_code
+      # the pull may have replaced this very script — run the new one
+      DEPLOY_PULLED=1 exec bash "$APP_DIR/scripts/deploy.sh" deploy
+    fi
     build_app
     if pm2 describe "$SERVICE" >/dev/null 2>&1; then
       log "Reloading ${SERVICE} (zero-downtime)…"
@@ -300,7 +305,9 @@ case "$cmd" in
     import_cards && log "Card artwork imported ✔ (already live — no restart needed)"
     ;;
   video)
-    cd "$APP_DIR"; fetch_promo_video && set_video_settings && log "Promo video in place ✔ (already live — no restart needed)"
+    cd "$APP_DIR"; fetch_promo_video && set_video_settings || fail "Promo video not in place."
+    pm2 describe "$SERVICE" >/dev/null 2>&1 && pm2 reload ecosystem.config.js --update-env >/dev/null && log "Reloaded ${SERVICE} so the new file is served"
+    log "Promo video in place ✔"
     ;;
   caddy)
     [ "$(id -u)" -eq 0 ] || fail "caddy needs root (sudo)."
@@ -312,3 +319,6 @@ case "$cmd" in
   status) pm2 status "$SERVICE" ;;
   *) fail "Unknown command: $cmd (setup | deploy | cards | video | caddy | logs | status)" ;;
 esac
+}
+
+main "$@"
