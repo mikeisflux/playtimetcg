@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import AddToCart from "@/components/AddToCart";
+import { JsonLd } from "@/components/ui";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { money } from "@/lib/content";
 import { activeProducts } from "@/lib/catalog";
-import { buildMetadata, jsonLdFor } from "@/lib/seo";
+import { buildMetadata, jsonLdFor, itemListLd } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/expansions", {
-    title: "Expansions — Six Packs, Twelve Cards Each | Play Time (18+)",
-    description: "Six expansion packs for the Play Time couples card game. Shuffle them into the base deck by color, or play one on its own for a themed night. Twelve cards per pack.",
+    title: "Expansion Packs — Six Packs, Twelve Cards Each",
+    description: "Six expansion packs for the Play Time couples card game. Shuffle one into the base deck by color, or play a single pack on its own for a themed night.",
     keywords: ["Play Time expansions", "couples card game expansion pack", "date night card game add-on", "themed card game night", "Play Time packs"],
   });
 }
@@ -23,10 +25,12 @@ const PLAYING = [
 
 export default async function Expansions() {
   const [packs, jsonLd] = await Promise.all([activeProducts("expansion"), jsonLdFor("/expansions")]);
+  const listLd = await itemListLd("Play Time expansion packs", "/expansions", packs);
 
   return (
     <>
-      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
+      <JsonLd data={jsonLd || listLd} />
+      <Breadcrumbs items={[{ name: "Expansions", href: "/expansions" }]} />
 
       {/* Header */}
       <section id="top" className="wrap" style={{ paddingBlock: "clamp(48px, 8vw, 104px) clamp(40px, 6vw, 72px)" }} data-screen-label="Expansions header">
@@ -51,7 +55,7 @@ export default async function Expansions() {
               <div style={{ height: 8, background: p.accent }} aria-hidden />
               <div className="between" style={{ alignItems: "flex-start", gap: 32, padding: "28px 0 40px" }}>
                 <div className="stack gap-12" style={{ maxWidth: 720, flex: "1 1 360px" }}>
-                  <Link href={`/shop/${p.slug}`} className="t-h3" style={{ color: "var(--text-strong)" }}>{p.name}</Link>
+                  <h2 className="t-h3" style={{ margin: 0 }}><Link href={`/shop/${p.slug}`} style={{ color: "var(--text-strong)" }}>{p.name}</Link></h2>
                   {p.tag && <div className="t-item-sm" style={{ color: p.accent }}>{p.tag}</div>}
                   {p.description
                     ? <p className="t-body" style={{ fontSize: 17, marginTop: 6 }}>{p.description}</p>
@@ -82,7 +86,7 @@ export default async function Expansions() {
               <div key={r.title} className="numrow">
                 <div className="numrow__n" style={{ color: "#5AB8F0" }}>{String(j + 1).padStart(2, "0")}</div>
                 <div className="numrow__body">
-                  <div className="t-item">{r.title}</div>
+                  <h3 className="t-item">{r.title}</h3>
                   <div className="t-body">{r.body}</div>
                 </div>
               </div>
@@ -97,7 +101,7 @@ export default async function Expansions() {
           <h2 className="t-poster">Ready when<br />you are.</h2>
           <div className="stack" style={{ gap: 22, alignItems: "flex-start" }}>
             <p style={{ fontSize: 20, lineHeight: 1.5, fontWeight: 500, maxWidth: 440 }}>Every pack plugs into the base deck. Start there, then add the packs that sound like your kind of night.</p>
-            <Link className="btn btn--dark" href="/shop/base">Buy the base set</Link>
+            <div className="row"><Link className="btn btn--dark" href="/shop/base">Buy the base set</Link><Link className="btn btn--dark" href="/shop">Next: the shop</Link></div>
           </div>
         </div>
       </section>

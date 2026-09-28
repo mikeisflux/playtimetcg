@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ImageSlot, Includes } from "@/components/ui";
+import { ImageSlot, Includes, JsonLd } from "@/components/ui";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AddToCart from "@/components/AddToCart";
 import { money } from "@/lib/content";
 import { activeProducts, type PublicProduct } from "@/lib/catalog";
-import { buildMetadata, jsonLdFor } from "@/lib/seo";
+import { buildMetadata, jsonLdFor, itemListLd } from "@/lib/seo";
 import { isAgeVerified } from "@/lib/auth";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/pricing", {
-    title: "Pricing — Base Set, Couple’s Bundle or Collector | Play Time (18+)",
-    description: "Compare the three Play Time sets side by side: the 72-card base set, the Couple’s bundle with two expansion packs, and the Collector edition with all six packs, a premium storage box and exclusive Rares.",
+    title: "Pricing — Base Set, Couple’s Bundle or Collector",
+    description: "Compare the three Play Time sets: the 72-card base set, the Couple’s bundle with two expansion packs, and the Collector edition with all six packs and Rares.",
     keywords: ["Play Time price", "couples card game bundle", "collector edition card game", "Play Time base set", "adult card game pricing"],
   });
 }
@@ -24,6 +25,7 @@ export default async function Pricing() {
   const [sets, subs, ageOk, jsonLd] = await Promise.all([
     activeProducts("set"), activeProducts("subscription"), isAgeVerified(), jsonLdFor("/pricing"),
   ]);
+  const listLd = await itemListLd("Play Time sets", "/pricing", [...sets, ...subs]);
   const by = (slug: string): PublicProduct | undefined => sets.find((p) => p.slug === slug);
   const price = (slug: string) => { const p = by(slug); return p ? money(p.priceCents) : FALLBACK[slug] ?? "—"; };
   const cols: { slug: string; head: string }[] = [
@@ -43,7 +45,8 @@ export default async function Pricing() {
 
   return (
     <>
-      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
+      <JsonLd data={jsonLd || listLd} />
+      <Breadcrumbs items={[{ name: "Pricing", href: "/pricing" }]} />
 
       {/* Header */}
       <section id="top" className="wrap" style={{ paddingBlock: "clamp(48px, 8vw, 104px) clamp(40px, 6vw, 72px)" }} data-screen-label="Pricing header">
@@ -68,10 +71,10 @@ export default async function Pricing() {
         <div className="grid g-380" style={{ gap: 24 }}>
           {sets.map((p) => (
             <div key={p.id} className={`prod${p.featured ? " prod--featured" : ""}`}>
-              <ImageSlot src={ageOk ? p.imageUrl : null} alt={p.name} hint={`${p.name} · product photo · 1600 × 1200 px`} />
+              <ImageSlot src={ageOk ? p.imageUrl : null} alt={`${p.name} — Play Time card game box`} hint={`${p.name} · product photo · 1600 × 1200 px`} />
               <div className="prod__body" style={{ padding: 28, gap: 18 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-                  <Link href={`/shop/${p.slug}`} className="prod__name" style={{ color: "var(--text-strong)", fontSize: 28 }}>{p.name}</Link>
+                  <h2 className="prod__name" style={{ margin: 0, fontSize: 28 }}><Link href={`/shop/${p.slug}`} style={{ color: "var(--text-strong)" }}>{p.name}</Link></h2>
                   <div className="price" style={{ fontSize: 28 }}>{money(p.priceCents)}</div>
                 </div>
                 {p.tag && <div className="prod__tag" style={{ color: p.accent }}>{p.tag}</div>}
@@ -156,7 +159,7 @@ export default async function Pricing() {
           <h2 className="t-poster">Ready when<br />you are.</h2>
           <div className="stack" style={{ gap: 22, alignItems: "flex-start" }}>
             <p style={{ fontSize: 20, lineHeight: 1.5, fontWeight: 500, maxWidth: 440 }}>Not sure? Start with the base set. Every pack plugs into it later, and the rules never change.</p>
-            <Link className="btn btn--dark" href="/shop/base">Buy the base set</Link>
+            <div className="row"><Link className="btn btn--dark" href="/shop/base">Buy the base set</Link><Link className="btn btn--dark" href="/faq">Questions, answered</Link></div>
           </div>
         </div>
       </section>

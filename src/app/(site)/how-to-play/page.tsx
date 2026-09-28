@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { JsonLd } from "@/components/ui";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { HOW_STEPS } from "@/lib/content";
-import { buildMetadata, jsonLdFor } from "@/lib/seo";
+import { buildMetadata, jsonLdFor, howToLd } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/how-to-play", {
-    title: "How to Play — Learn Play Time in a Minute | Play Time (18+)",
-    description: "Roll the 12-sided die, draw a card from the matching category, read it out loud, then do it, tweak it, save it or pass. Setup, a full turn, special rolls and the ground rules for the Play Time card game for couples.",
+    title: "How to Play — Learn the Rules in a Minute",
+    description: "Roll the 12-sided die, draw a card from the matching category, read it out loud, then do it, tweak it, save it or pass. Setup, special rolls and ground rules.",
     keywords: ["how to play Play Time", "couples card game rules", "Play Time rulebook", "adult card game instructions", "date night game rules"],
   });
 }
@@ -96,11 +98,15 @@ const BLOCKS: Block[] = [
 ];
 
 export default async function HowToPlay() {
-  const jsonLd = await jsonLdFor("/how-to-play");
+  const [jsonLd, howTo] = await Promise.all([
+    jsonLdFor("/how-to-play"),
+    howToLd("How to play Play Time", "Learn the Play Time card game for couples in a minute: roll, draw, read it out loud, then do it, tweak it or pass.", HOW_STEPS, "/how-to-play"),
+  ]);
 
   return (
     <>
-      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
+      <JsonLd data={jsonLd || howTo} />
+      <Breadcrumbs items={[{ name: "How to play", href: "/how-to-play" }]} />
 
       {/* Header */}
       <section id="top" className="wrap" style={{ paddingBlock: "clamp(48px, 8vw, 104px) 0" }} data-screen-label="How to play header">
@@ -117,7 +123,7 @@ export default async function HowToPlay() {
           {HOW_STEPS.map((st) => (
             <div key={st.n} className="step">
               <div className="step__n" style={{ color: st.col }}>{st.n}</div>
-              <div className="t-item">{st.title}</div>
+              <h2 className="t-item">{st.title}</h2>
               <div className="t-body">{st.body}</div>
             </div>
           ))}
@@ -138,7 +144,7 @@ export default async function HowToPlay() {
                 <div key={r.title} className="numrow">
                   <div className="numrow__n" style={{ color: b.color }}>{String(j + 1).padStart(2, "0")}</div>
                   <div className="numrow__body">
-                    <div className="t-item">{r.title}</div>
+                    <h3 className="t-item">{r.title}</h3>
                     <div className="t-body">{r.body}</div>
                   </div>
                 </div>
@@ -159,7 +165,7 @@ export default async function HowToPlay() {
           <h2 className="t-poster">Ready when<br />you are.</h2>
           <div className="stack" style={{ gap: 22, alignItems: "flex-start" }}>
             <p style={{ fontSize: 20, lineHeight: 1.5, fontWeight: 500, maxWidth: 440 }}>72 cards, one die, and a quick start card that gets you playing tonight. Either of you can pass, tweak or stop at any time.</p>
-            <Link className="btn btn--dark" href="/shop/base">Buy the base set</Link>
+            <div className="row"><Link className="btn btn--dark" href="/shop/base">Buy the base set</Link><Link className="btn btn--dark" href="/the-deck">Next: the deck</Link></div>
           </div>
         </div>
       </section>

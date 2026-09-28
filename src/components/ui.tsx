@@ -32,7 +32,7 @@ export function GameCard({ card, setName = "Base", small, imageUrl, className = 
       {card.art ? (
         <div className="card__in">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={card.art} alt={`${card.title} — ${card.category}, spice ${card.spice} of 5`} draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          <img src={card.art} alt={`${card.title} — ${card.category}, spice ${card.spice} of 5`} width={635} height={889} loading="lazy" decoding="async" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         </div>
       ) : (
       <div className="card__in">
@@ -80,17 +80,29 @@ export function RarityFrame({ frame, w = 64, h = 88 }: { frame: string; w?: numb
   );
 }
 
-export function ImageSlot({ src, alt, hint, aspect = "4 / 3" }: { src?: string | null; alt: string; hint: string; aspect?: string }) {
+/* Fixed-ratio image well. `priority` marks the one above-the-fold image
+   (eager + high fetch priority); everything else lazy-loads. The placeholder
+   is decorative, so it is hidden from assistive tech and crawlers see no
+   empty-alt image. */
+export function ImageSlot({ src, alt, hint, aspect = "4 / 3", priority }: { src?: string | null; alt: string; hint: string; aspect?: string; priority?: boolean }) {
   return (
     <div style={{ position: "relative", aspectRatio: aspect, background: "var(--surface-2)", overflow: "hidden" }}>
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={alt} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <img src={src} alt={alt} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : undefined} decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       ) : (
-        <div className="slot">{hint}</div>
+        <div className="slot" aria-hidden>{hint}</div>
       )}
     </div>
   );
+}
+
+/* Server-rendered JSON-LD. Accepts one graph or several; `<` is escaped so
+   content can never close the script tag. */
+export function JsonLd({ data }: { data: Record<string, unknown> | Record<string, unknown>[] | string | null | undefined }) {
+  if (!data) return null;
+  const json = typeof data === "string" ? data : JSON.stringify(data);
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: json.replace(/</g, "\\u003c") }} />;
 }
 
 export function Includes({ items }: { items: string[] }) {

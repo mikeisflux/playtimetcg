@@ -2,7 +2,9 @@
 import { useRef, useState } from "react";
 
 /* The promo video in the Home hero. Autoplays muted and loops (browsers
-   allow that without a click); one tap turns the sound on. */
+   allow that without a click); one tap turns the sound on. preload="metadata"
+   plus a poster (the safe dark wordmark when none is configured) keeps the
+   hero from shifting layout or pulling the whole file before first paint. */
 export default function HeroVideo({ src, poster, autoplay = true }: { src: string; poster?: string; autoplay?: boolean }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
@@ -19,7 +21,7 @@ export default function HeroVideo({ src, poster, autoplay = true }: { src: strin
       <video
         ref={ref}
         src={src}
-        poster={poster || undefined}
+        poster={poster || "/og.png"}
         autoPlay={autoplay}
         muted
         loop

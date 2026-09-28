@@ -1,27 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { RampStrip, ImageSlot, RarityFrame, SpiceMeter, Includes } from "@/components/ui";
+import { RampStrip, ImageSlot, RarityFrame, SpiceMeter, Includes, JsonLd } from "@/components/ui";
 import TryARoll from "@/components/TryARoll";
 import AddToCart from "@/components/AddToCart";
 import HeroVideo from "@/components/HeroVideo";
 import { HOW_STEPS, RARITIES, HEAT_LEVELS, money } from "@/lib/content";
 import { activeProducts, sampleCards, type PublicProduct } from "@/lib/catalog";
-import { buildMetadata, jsonLdFor } from "@/lib/seo";
+import { buildMetadata, jsonLdFor, organizationLd, websiteLd } from "@/lib/seo";
 import { getSettings, flag } from "@/lib/settings";
 import { isAgeVerified } from "@/lib/auth";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/", {
-    title: "Play Time — Roll the Die. Raise the Heat. | The Card Game for Couples (18+)",
-    description: "72 cards, one 12-sided die, and a better night than the one you were planning. Written by a practicing sex therapist to be easy to say yes to — and just as easy to say no.",
+    title: "Play Time — The Card Game for Couples (18+)",
+    absolute: true,
+    description: "72 cards, one 12-sided die, and a better night than the one you were planning. An adult card game for couples, written by a practicing sex therapist.",
     keywords: ["couples card game", "adult card game", "sex therapist game", "date night game", "intimacy game for couples", "Play Time card game"],
   });
 }
 
 export default async function Home() {
-  const [products, expansions, s, ageOk, jsonLd, samples] = await Promise.all([
+  const [products, expansions, s, ageOk, jsonLd, samples, orgLd, siteLd] = await Promise.all([
     activeProducts("set"), activeProducts("expansion"),
     getSettings(["DISCREET_PACKAGING", "INTRO_VIDEO_URL", "INTRO_VIDEO_POSTER", "HERO_VIDEO_URL", "HERO_VIDEO_ENABLED", "HERO_VIDEO_AUTOPLAY"]), isAgeVerified(), jsonLdFor("/"), sampleCards(),
+    organizationLd(), websiteLd(),
   ]);
   const base = products.find((p) => p.slug === "base");
   const basePrice = base ? money(base.priceCents) : "$35";
@@ -30,7 +32,8 @@ export default async function Home() {
 
   return (
     <>
-      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
+      {/* Organization + WebSite graph (an Admin → SEO override for "/" replaces it) */}
+      <JsonLd data={jsonLd || [orgLd, siteLd]} />
 
       {/* 3. Hero */}
       <section id="top" className={`wrap hero${heroVideo ? "" : " hero--photo"}`} style={{ paddingBlock: "clamp(48px, 8vw, 104px) clamp(56px, 8vw, 96px)" }} data-screen-label="Hero">
@@ -50,7 +53,7 @@ export default async function Home() {
             </>
           ) : (
             <>
-              <ImageSlot src={ageOk ? base?.imageUrl && base.imageSlot === "site-hero" ? base.imageUrl : null : null} alt="A couple with the Play Time deck on the bed" hint="Hero · suggestive, not explicit · couple + deck on the bed · 1600 × 2000 px" aspect="4 / 5" />
+              <ImageSlot src={ageOk ? base?.imageUrl && base.imageSlot === "site-hero" ? base.imageUrl : null : null} alt="A couple with the Play Time deck on the bed" hint="Hero · suggestive, not explicit · couple + deck on the bed · 1600 × 2000 px" aspect="4 / 5" priority />
               <RampStrip h={10} />
             </>
           )}
@@ -78,16 +81,23 @@ export default async function Home() {
           {HOW_STEPS.map((st) => (
             <div key={st.n} className="step">
               <div className="step__n" style={{ color: st.col }}>{st.n}</div>
-              <div className="t-item">{st.title}</div>
+              <h3 className="t-item">{st.title}</h3>
               <div className="t-body">{st.body}</div>
             </div>
           ))}
+        </div>
+        <div className="row" style={{ marginTop: 32 }}>
+          <Link className="btn btn--outline" href="/how-to-play">Read the full rules</Link>
+          <Link className="btn btn--outline" href="/faq">Questions, answered</Link>
         </div>
       </section>
 
       {/* 6. Try a roll */}
       <section id="deck" className="surface" data-screen-label="Try a roll">
-        <div className="wrap section"><TryARoll cards={samples} /></div>
+        <div className="wrap section stack" style={{ gap: 32 }}>
+          <TryARoll cards={samples} />
+          <div className="nextup"><span className="nextup__label">See every category</span><Link href="/the-deck">The deck: seven categories, one die</Link></div>
+        </div>
       </section>
 
       {/* 7. Rarity and heat */}
@@ -139,7 +149,7 @@ export default async function Home() {
           <div className="grid g-300" id="bundles">
             {products.map((p) => (
               <div key={p.id} className={`prod${p.featured ? " prod--featured" : ""}`}>
-                <ImageSlot src={ageOk ? p.imageUrl : null} alt={p.name} hint={`${p.name} · product photo · 1600 × 1200 px`} />
+                <ImageSlot src={ageOk ? p.imageUrl : null} alt={`${p.name} — Play Time card game box`} hint={`${p.name} · product photo · 1600 × 1200 px`} />
                 <div className="prod__body">
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
                     <Link href={`/shop/${p.slug}`} className="prod__name" style={{ color: "var(--text-strong)" }}>{p.name}</Link>
@@ -160,7 +170,7 @@ export default async function Home() {
               <div className="eyebrow" style={{ color: "#5AB8F0" }}>Expansions</div>
               <h3 className="t-h3">Six packs. Twelve cards each.</h3>
             </div>
-            <div style={{ fontSize: 15, color: "var(--text-muted)", maxWidth: 360 }}>Shuffle them into the base deck, or play one on its own for a themed night.</div>
+            <div style={{ fontSize: 15, color: "var(--text-muted)", maxWidth: 360 }}>Shuffle them into the base deck, or play one on its own for a themed night. <Link href="/expansions" style={{ color: "var(--text-strong)", textDecoration: "underline" }}>See all expansions</Link> or <Link href="/pricing" style={{ color: "var(--text-strong)", textDecoration: "underline" }}>compare the sets</Link>.</div>
           </div>
           <div className="grid g-190">
             {expansions.map((k) => (

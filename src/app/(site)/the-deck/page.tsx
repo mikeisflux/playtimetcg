@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { GameCard, RarityFrame, SpiceMeter } from "@/components/ui";
+import { GameCard, RarityFrame, SpiceMeter, JsonLd } from "@/components/ui";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import TryARoll from "@/components/TryARoll";
 import { DIE, RARITIES, HEAT_LEVELS } from "@/lib/content";
 import { sampleCards } from "@/lib/catalog";
@@ -8,8 +9,8 @@ import { buildMetadata, jsonLdFor } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/the-deck", {
-    title: "The Deck — Seven Categories, One Die | Play Time (18+)",
-    description: "72 cards across seven categories, three rarities and five heat levels, all picked by a single 12-sided die. Try a roll and see one sample card from every category in the Play Time couples card game.",
+    title: "The Deck — 72 Cards, Seven Categories, One Die",
+    description: "72 cards across seven categories, three rarities and five heat levels, all picked by one 12-sided die. Try a roll and see a sample card from every category.",
     keywords: ["Play Time deck", "couples card game categories", "card game heat levels", "12-sided die card game", "rare cards couples game"],
   });
 }
@@ -28,7 +29,8 @@ export default async function TheDeck() {
 
   return (
     <>
-      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
+      <JsonLd data={jsonLd} />
+      <Breadcrumbs items={[{ name: "The deck", href: "/the-deck" }]} />
 
       {/* Header */}
       <section id="top" className="wrap" style={{ paddingBlock: "clamp(48px, 8vw, 104px) clamp(48px, 7vw, 88px)" }} data-screen-label="The deck header">
@@ -72,7 +74,7 @@ export default async function TheDeck() {
                 <div key={r.name} className="row" style={{ gap: 20, flexWrap: "nowrap" }}>
                   <RarityFrame frame={r.frame} />
                   <div className="stack min0" style={{ gap: 6 }}>
-                    <div className="t-item-md">{r.name}</div>
+                    <h3 className="t-item-md">{r.name}</h3>
                     <div className="t-body-sm">{r.body}</div>
                   </div>
                 </div>
@@ -111,7 +113,7 @@ export default async function TheDeck() {
             </div>
           ))}
         </div>
-        <p className="t-body" style={{ marginTop: 28, maxWidth: 560 }}>Every set ships with the full 72-card base deck, the 12-sided die and a drawstring bag. Expansion packs add twelve cards each and shuffle straight in by color.</p>
+        <p className="t-body" style={{ marginTop: 28, maxWidth: 560 }}>Every set ships with the full 72-card base deck, the 12-sided die and a drawstring bag. <Link href="/expansions">Expansion packs</Link> add twelve cards each and shuffle straight in by color. New to the game? Start with <Link href="/how-to-play">how to play</Link>.</p>
       </section>
 
       {/* Close */}
@@ -120,7 +122,7 @@ export default async function TheDeck() {
           <h2 className="t-poster">Ready when<br />you are.</h2>
           <div className="stack" style={{ gap: 22, alignItems: "flex-start" }}>
             <p style={{ fontSize: 20, lineHeight: 1.5, fontWeight: 500, maxWidth: 440 }}>Seven categories, three rarities, five heat levels and one die to pick the mood. The base set has all of it.</p>
-            <Link className="btn btn--dark" href="/shop/base">Buy the base set</Link>
+            <div className="row"><Link className="btn btn--dark" href="/shop/base">Buy the base set</Link><Link className="btn btn--dark" href="/expansions">Next: expansions</Link></div>
           </div>
         </div>
       </section>

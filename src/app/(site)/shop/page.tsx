@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ImageSlot, Includes } from "@/components/ui";
+import { ImageSlot, Includes, JsonLd } from "@/components/ui";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AddToCart from "@/components/AddToCart";
 import { activeProducts } from "@/lib/catalog";
 import { money } from "@/lib/content";
-import { buildMetadata, jsonLdFor } from "@/lib/seo";
+import { buildMetadata, jsonLdFor, itemListLd } from "@/lib/seo";
 import { getSettings, flag } from "@/lib/settings";
 import { isAgeVerified } from "@/lib/auth";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/shop", {
-    title: "Shop — Base Set, Bundles, Expansions & Online Play",
-    description: "Buy the Play Time base set, the Couple’s bundle, the Collector edition, six expansion packs, digital packs and the monthly 3-card subscription.",
+    title: "Shop — Base Set, Bundles & Expansion Packs",
+    description: "Buy the Play Time base set, the Couple’s bundle, the Collector edition, six expansion packs, digital packs and a monthly 3-card subscription. Ships discreetly.",
     keywords: ["buy Play Time card game", "couples card game shop", "expansion packs", "monthly card subscription"],
   });
 }
@@ -22,10 +23,12 @@ export default async function Shop() {
     getSettings(["DISCREET_PACKAGING"]), isAgeVerified(), jsonLdFor("/shop"),
   ]);
   const discreet = flag(s.DISCREET_PACKAGING);
+  const listLd = await itemListLd("Play Time shop", "/shop", [...sets, ...expansions, ...subs, ...digital]);
 
   return (
     <>
-      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
+      <JsonLd data={jsonLd || listLd} />
+      <Breadcrumbs items={[{ name: "Shop", href: "/shop" }]} />
       <section className="wrap section" style={{ paddingBottom: "clamp(40px, 5vw, 64px)" }} data-screen-label="Shop">
         <div className="between" style={{ marginBottom: 40 }}>
           <div className="stack gap-12">
@@ -37,10 +40,10 @@ export default async function Shop() {
         <div className="grid g-300" id="bundles">
           {sets.map((p) => (
             <div key={p.id} className={`prod${p.featured ? " prod--featured" : ""}`}>
-              <Link href={`/shop/${p.slug}`}><ImageSlot src={ageOk ? p.imageUrl : null} alt={p.name} hint={`${p.name} · product photo · 1600 × 1200 px`} /></Link>
+              <Link href={`/shop/${p.slug}`} aria-label={`${p.name} — details`}><ImageSlot src={ageOk ? p.imageUrl : null} alt={`${p.name} — Play Time card game box`} hint={`${p.name} · product photo · 1600 × 1200 px`} /></Link>
               <div className="prod__body">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-                  <Link href={`/shop/${p.slug}`} className="prod__name" style={{ color: "var(--text-strong)" }}>{p.name}</Link>
+                  <h2 className="prod__name" style={{ margin: 0 }}><Link href={`/shop/${p.slug}`} style={{ color: "var(--text-strong)" }}>{p.name}</Link></h2>
                   <div className="price">{money(p.priceCents)}</div>
                 </div>
                 {p.tag && <div className="prod__tag" style={{ color: p.accent }}>{p.tag}</div>}
@@ -50,6 +53,14 @@ export default async function Shop() {
               </div>
             </div>
           ))}
+        </div>
+        <div className="nextup" style={{ marginTop: 40 }}>
+          <span className="nextup__label">Before you buy</span>
+          <Link href="/pricing">Compare the sets</Link>
+          <Link href="/how-to-play">How to play</Link>
+          <Link href="/faq">FAQ</Link>
+          <Link href="/shipping">Shipping</Link>
+          <Link href="/returns">Returns</Link>
         </div>
       </section>
 

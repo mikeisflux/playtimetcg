@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import ContentPage from "@/components/ContentPage";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import { JsonLd } from "@/components/ui";
 import { prisma } from "@/lib/db";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata, jsonLdFor } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/faq", {
-    title: "FAQ — Questions, answered | Play Time",
-    description: "How the Play Time couples card game works, who it's for, the sex therapy behind it, expansions, shipping, returns and privacy.",
+    title: "FAQ — Questions, Answered",
+    description: "How the Play Time couples card game works, who it’s for, the sex therapy behind it, expansions, discreet shipping, returns and privacy. Straight answers.",
     keywords: ["Play Time FAQ", "couples card game questions", "sex therapist card game", "how to play Play Time", "discreet shipping"],
   });
 }
@@ -31,11 +33,12 @@ async function faqJsonLd(): Promise<string | null> {
 }
 
 export default async function Faq() {
-  const jsonLd = await faqJsonLd();
+  const [faqLd, override] = await Promise.all([faqJsonLd(), jsonLdFor("/faq")]);
   return (
     <>
-      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
-      <ContentPage slug="faq" fallbackTitle="Questions, answered." />
+      <JsonLd data={override || faqLd} />
+      <Breadcrumbs items={[{ name: "FAQ", href: "/faq" }]} />
+      <ContentPage slug="faq" fallbackTitle="Questions, answered." next={[["How to play", "/how-to-play"], ["The deck", "/the-deck"], ["Shop", "/shop"], ["Contact", "/contact"]]} />
     </>
   );
 }

@@ -1,9 +1,10 @@
 /* Text pages (Privacy, Terms, Shipping, Returns, FAQ). Seeded from
    prisma/pages/*.html and edited in Admin → Pages (stored as HTML in the Page
    table). When no published page exists we say so. */
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 
-export default async function ContentPage({ slug, fallbackTitle }: { slug: string; fallbackTitle: string }) {
+export default async function ContentPage({ slug, fallbackTitle, next = [] }: { slug: string; fallbackTitle: string; next?: [label: string, href: string][] }) {
   let page: { title: string; html: string; published: boolean; updatedAt: Date } | null = null;
   try {
     page = await prisma.page.findUnique({ where: { slug }, select: { title: true, html: true, published: true, updatedAt: true } });
@@ -22,6 +23,12 @@ export default async function ContentPage({ slug, fallbackTitle }: { slug: strin
       ) : (
         <div className="prose">
           <p>This page hasn’t been written yet. The owner supplies the legal copy in Admin → Pages.</p>
+        </div>
+      )}
+      {next.length > 0 && (
+        <div className="nextup" style={{ marginTop: 48, maxWidth: 760 }}>
+          <span className="nextup__label">Related</span>
+          {next.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
         </div>
       )}
     </section>
