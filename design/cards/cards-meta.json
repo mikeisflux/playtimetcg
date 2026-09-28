@@ -1,0 +1,1298 @@
+[
+ {
+  "page": 1,
+  "set": "base",
+  "code": "B001",
+  "category": "Soft Touch",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "10 min"
+ },
+ {
+  "page": 2,
+  "set": "base",
+  "code": "B002",
+  "category": "Soft Touch",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "5 min"
+ },
+ {
+  "page": 3,
+  "set": "base",
+  "code": "B003",
+  "category": "Soft Touch",
+  "rarity": "Common",
+  "spice": 1,
+  "time": "5 min"
+ },
+ {
+  "page": 4,
+  "set": "base",
+  "code": "B004",
+  "category": "Soft Touch",
+  "rarity": "Uncommon",
+  "spice": 2,
+  "time": "10 min"
+ },
+ {
+  "page": 5,
+  "set": "base",
+  "code": "B005",
+  "category": "Soft Touch",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "8 min"
+ },
+ {
+  "page": 6,
+  "set": "base",
+  "code": "B006",
+  "category": "Soft Touch",
+  "rarity": "Common",
+  "spice": 1,
+  "time": "10 min"
+ },
+ {
+  "page": 7,
+  "set": "base",
+  "code": "B007",
+  "category": "Soft Touch",
+  "rarity": "Uncommon",
+  "spice": 2,
+  "time": "6 min"
+ },
+ {
+  "page": 8,
+  "set": "base",
+  "code": "B008",
+  "category": "Soft Touch",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "7 min"
+ },
+ {
+  "page": 9,
+  "set": "base",
+  "code": "B009",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "10 min"
+ },
+ {
+  "page": 10,
+  "set": "base",
+  "code": "B010",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "8 min"
+ },
+ {
+  "page": 11,
+  "set": "base",
+  "code": "B011",
+  "category": "Flirty Fun",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "5 min"
+ },
+ {
+  "page": 12,
+  "set": "base",
+  "code": "B012",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "10 min"
+ },
+ {
+  "page": 13,
+  "set": "base",
+  "code": "B013",
+  "category": "Flirty Fun",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "7 min"
+ },
+ {
+  "page": 14,
+  "set": "base",
+  "code": "B014",
+  "category": "Flirty Fun",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "10 min"
+ },
+ {
+  "page": 15,
+  "set": "base",
+  "code": "B015",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "8 min"
+ },
+ {
+  "page": 16,
+  "set": "base",
+  "code": "B016",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 17,
+  "set": "base",
+  "code": "B017",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "12 min"
+ },
+ {
+  "page": 18,
+  "set": "base",
+  "code": "B018",
+  "category": "Classic Heat",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "15 min"
+ },
+ {
+  "page": 19,
+  "set": "base",
+  "code": "B019",
+  "category": "Classic Heat",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "20 min"
+ },
+ {
+  "page": 20,
+  "set": "base",
+  "code": "B020",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 21,
+  "set": "base",
+  "code": "B021",
+  "category": "Classic Heat",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "10 min"
+ },
+ {
+  "page": 22,
+  "set": "base",
+  "code": "B022",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "12 min"
+ },
+ {
+  "page": 23,
+  "set": "base",
+  "code": "B023",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 24,
+  "set": "base",
+  "code": "B024",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "15 min"
+ },
+ {
+  "page": 25,
+  "set": "base",
+  "code": "B025",
+  "category": "Turn It Up",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "20 min"
+ },
+ {
+  "page": 26,
+  "set": "base",
+  "code": "B026",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "10 min"
+ },
+ {
+  "page": 27,
+  "set": "base",
+  "code": "B027",
+  "category": "Turn It Up",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "20 min"
+ },
+ {
+  "page": 28,
+  "set": "base",
+  "code": "B028",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "Varies"
+ },
+ {
+  "page": 29,
+  "set": "base",
+  "code": "B029",
+  "category": "Turn It Up",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "30 min"
+ },
+ {
+  "page": 30,
+  "set": "base",
+  "code": "B030",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "15 min"
+ },
+ {
+  "page": 31,
+  "set": "base",
+  "code": "B031",
+  "category": "Wild Card",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 32,
+  "set": "base",
+  "code": "B032",
+  "category": "Wild Card",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "Varies"
+ },
+ {
+  "page": 33,
+  "set": "base",
+  "code": "B033",
+  "category": "Wild Card",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "25 min"
+ },
+ {
+  "page": 34,
+  "set": "base",
+  "code": "B034",
+  "category": "Wild Card",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "12 min"
+ },
+ {
+  "page": 35,
+  "set": "base",
+  "code": "B035",
+  "category": "Wild Card",
+  "rarity": "Rare",
+  "spice": 5,
+  "time": "15 min"
+ },
+ {
+  "page": 36,
+  "set": "base",
+  "code": "B036",
+  "category": "Wild Card",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "10 min"
+ },
+ {
+  "page": 37,
+  "set": "base",
+  "code": "B037",
+  "category": "Focus on You",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 38,
+  "set": "base",
+  "code": "B038",
+  "category": "Focus on You",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "10 min"
+ },
+ {
+  "page": 39,
+  "set": "base",
+  "code": "B039",
+  "category": "Focus on You",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "20 min"
+ },
+ {
+  "page": 40,
+  "set": "base",
+  "code": "B040",
+  "category": "Focus on You",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "12 min"
+ },
+ {
+  "page": 41,
+  "set": "base",
+  "code": "B041",
+  "category": "Focus on You",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "15 min"
+ },
+ {
+  "page": 42,
+  "set": "base",
+  "code": "B042",
+  "category": "Free Play",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "Varies"
+ },
+ {
+  "page": 43,
+  "set": "base",
+  "code": "B043",
+  "category": "Free Play",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "Varies"
+ },
+ {
+  "page": 44,
+  "set": "base",
+  "code": "B044",
+  "category": "Free Play",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "20 min"
+ },
+ {
+  "page": 45,
+  "set": "base",
+  "code": "B045",
+  "category": "Free Play",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 46,
+  "set": "base",
+  "code": "B046",
+  "category": "Classic Heat",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 47,
+  "set": "base",
+  "code": "B047",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 48,
+  "set": "base",
+  "code": "B048",
+  "category": "Turn It Up",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "15 min"
+ },
+ {
+  "page": 49,
+  "set": "base",
+  "code": "B049",
+  "category": "Wild Card",
+  "rarity": "Rare",
+  "spice": 5,
+  "time": "10 min"
+ },
+ {
+  "page": 50,
+  "set": "base",
+  "code": "B050",
+  "category": "Flirty Fun",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "20 min"
+ },
+ {
+  "page": 51,
+  "set": "base",
+  "code": "B051",
+  "category": "Classic Heat",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 52,
+  "set": "base",
+  "code": "B052",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "10 min"
+ },
+ {
+  "page": 53,
+  "set": "base",
+  "code": "B053",
+  "category": "Soft Touch",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "6 min"
+ },
+ {
+  "page": 54,
+  "set": "base",
+  "code": "B054",
+  "category": "Classic Heat",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "10 min"
+ },
+ {
+  "page": 55,
+  "set": "base",
+  "code": "B055",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "10 min"
+ },
+ {
+  "page": 56,
+  "set": "base",
+  "code": "B056",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "8 min"
+ },
+ {
+  "page": 57,
+  "set": "base",
+  "code": "B057",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "10 min"
+ },
+ {
+  "page": 58,
+  "set": "base",
+  "code": "B058",
+  "category": "Turn It Up",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "12 min"
+ },
+ {
+  "page": 59,
+  "set": "base",
+  "code": "B059",
+  "category": "Wild Card",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "12 min"
+ },
+ {
+  "page": 60,
+  "set": "base",
+  "code": "B060",
+  "category": "Soft Touch",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "12 min"
+ },
+ {
+  "page": 61,
+  "set": "base",
+  "code": "B061",
+  "category": "Turn It Up",
+  "rarity": "Rare",
+  "spice": 5,
+  "time": "25 min"
+ },
+ {
+  "page": 62,
+  "set": "base",
+  "code": "B062",
+  "category": "Flirty Fun",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "20 min"
+ },
+ {
+  "page": 63,
+  "set": "base",
+  "code": "B063",
+  "category": "Soft Touch",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "12 min"
+ },
+ {
+  "page": 64,
+  "set": "base",
+  "code": "B064",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "8 min"
+ },
+ {
+  "page": 65,
+  "set": "base",
+  "code": "B065",
+  "category": "Soft Touch",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "10 min"
+ },
+ {
+  "page": 66,
+  "set": "base",
+  "code": "B066",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 67,
+  "set": "base",
+  "code": "B067",
+  "category": "Wild Card",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 68,
+  "set": "base",
+  "code": "B068",
+  "category": "Focus on You",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "Entire time"
+ },
+ {
+  "page": 69,
+  "set": "base",
+  "code": "B069",
+  "category": "Turn It Up",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "20 min"
+ },
+ {
+  "page": 70,
+  "set": "base",
+  "code": "B070",
+  "category": "Wild Card",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "Varies"
+ },
+ {
+  "page": 71,
+  "set": "base",
+  "code": "B071",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 72,
+  "set": "base",
+  "code": "B072",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "8 min"
+ },
+ {
+  "page": 73,
+  "set": "date-night",
+  "code": "D001",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "Varies"
+ },
+ {
+  "page": 74,
+  "set": "date-night",
+  "code": "D002",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "15 min"
+ },
+ {
+  "page": 75,
+  "set": "date-night",
+  "code": "D003",
+  "category": "Flirty Fun",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "Entire evening"
+ },
+ {
+  "page": 76,
+  "set": "date-night",
+  "code": "D004",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "Movie length"
+ },
+ {
+  "page": 77,
+  "set": "date-night",
+  "code": "D005",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "20 min"
+ },
+ {
+  "page": 78,
+  "set": "date-night",
+  "code": "D006",
+  "category": "Wild Card",
+  "rarity": "Rare",
+  "spice": 3,
+  "time": "Evening"
+ },
+ {
+  "page": 79,
+  "set": "date-night",
+  "code": "D007",
+  "category": "Classic Heat",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 80,
+  "set": "date-night",
+  "code": "D008",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "5 min"
+ },
+ {
+  "page": 81,
+  "set": "date-night",
+  "code": "D009",
+  "category": "Wild Card",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "Varies"
+ },
+ {
+  "page": 82,
+  "set": "date-night",
+  "code": "D010",
+  "category": "Soft Touch",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "5 min"
+ },
+ {
+  "page": 83,
+  "set": "date-night",
+  "code": "D011",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 1,
+  "time": "Evening"
+ },
+ {
+  "page": 84,
+  "set": "date-night",
+  "code": "D012",
+  "category": "Turn It Up",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "Ride length"
+ },
+ {
+  "page": 85,
+  "set": "weekend",
+  "code": "W001",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "20 min"
+ },
+ {
+  "page": 86,
+  "set": "weekend",
+  "code": "W002",
+  "category": "Turn It Up",
+  "rarity": "Rare",
+  "spice": 5,
+  "time": "15 min"
+ },
+ {
+  "page": 87,
+  "set": "weekend",
+  "code": "W003",
+  "category": "Wild Card",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "30 min"
+ },
+ {
+  "page": 88,
+  "set": "weekend",
+  "code": "W004",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "Varies"
+ },
+ {
+  "page": 89,
+  "set": "weekend",
+  "code": "W005",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 90,
+  "set": "weekend",
+  "code": "W006",
+  "category": "Wild Card",
+  "rarity": "Rare",
+  "spice": 5,
+  "time": "20 min"
+ },
+ {
+  "page": 91,
+  "set": "weekend",
+  "code": "W007",
+  "category": "Focus on You",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "Extra hours"
+ },
+ {
+  "page": 92,
+  "set": "weekend",
+  "code": "W008",
+  "category": "Flirty Fun",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "Varies"
+ },
+ {
+  "page": 93,
+  "set": "weekend",
+  "code": "W009",
+  "category": "Turn It Up",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "4 hours"
+ },
+ {
+  "page": 94,
+  "set": "weekend",
+  "code": "W010",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "Evening"
+ },
+ {
+  "page": 95,
+  "set": "weekend",
+  "code": "W011",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "20 min"
+ },
+ {
+  "page": 96,
+  "set": "weekend",
+  "code": "W012",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "5 min"
+ },
+ {
+  "page": 97,
+  "set": "long-term",
+  "code": "L001",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "20 min"
+ },
+ {
+  "page": 98,
+  "set": "long-term",
+  "code": "L002",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "25 min"
+ },
+ {
+  "page": 99,
+  "set": "long-term",
+  "code": "L003",
+  "category": "Soft Touch",
+  "rarity": "Common",
+  "spice": 1,
+  "time": "10 min"
+ },
+ {
+  "page": 100,
+  "set": "long-term",
+  "code": "L004",
+  "category": "Focus on You",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "Entire night"
+ },
+ {
+  "page": 101,
+  "set": "long-term",
+  "code": "L005",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "20 min"
+ },
+ {
+  "page": 102,
+  "set": "long-term",
+  "code": "L006",
+  "category": "Wild Card",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "Weekend"
+ },
+ {
+  "page": 103,
+  "set": "long-term",
+  "code": "L007",
+  "category": "Soft Touch",
+  "rarity": "Uncommon",
+  "spice": 2,
+  "time": "25 min"
+ },
+ {
+  "page": 104,
+  "set": "long-term",
+  "code": "L008",
+  "category": "Soft Touch",
+  "rarity": "Uncommon",
+  "spice": 2,
+  "time": "15 min"
+ },
+ {
+  "page": 105,
+  "set": "long-term",
+  "code": "L009",
+  "category": "Wild Card",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "30 min"
+ },
+ {
+  "page": 106,
+  "set": "long-term",
+  "code": "L010",
+  "category": "Focus on You",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "Weekend"
+ },
+ {
+  "page": 107,
+  "set": "long-term",
+  "code": "L011",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 1,
+  "time": "Entire time"
+ },
+ {
+  "page": 108,
+  "set": "long-term",
+  "code": "L012",
+  "category": "Soft Touch",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "12 min"
+ },
+ {
+  "page": 109,
+  "set": "quick",
+  "code": "Q001",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 4,
+  "time": "5 min"
+ },
+ {
+  "page": 110,
+  "set": "quick",
+  "code": "Q002",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "8 min"
+ },
+ {
+  "page": 111,
+  "set": "quick",
+  "code": "Q003",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "10 min"
+ },
+ {
+  "page": 112,
+  "set": "quick",
+  "code": "Q004",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "3-5 min"
+ },
+ {
+  "page": 113,
+  "set": "quick",
+  "code": "Q005",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "10 min"
+ },
+ {
+  "page": 114,
+  "set": "quick",
+  "code": "Q006",
+  "category": "Wild Card",
+  "rarity": "Rare",
+  "spice": 5,
+  "time": "12 min"
+ },
+ {
+  "page": 115,
+  "set": "quick",
+  "code": "Q007",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 4,
+  "time": "8 min"
+ },
+ {
+  "page": 116,
+  "set": "quick",
+  "code": "Q008",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "10 min"
+ },
+ {
+  "page": 117,
+  "set": "quick",
+  "code": "Q009",
+  "category": "Wild Card",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "10 min"
+ },
+ {
+  "page": 118,
+  "set": "quick",
+  "code": "Q010",
+  "category": "Focus on You",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "7 min"
+ },
+ {
+  "page": 119,
+  "set": "quick",
+  "code": "Q011",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "5 min"
+ },
+ {
+  "page": 120,
+  "set": "quick",
+  "code": "Q012",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "8 min"
+ },
+ {
+  "page": 121,
+  "set": "toy",
+  "code": "T001",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 122,
+  "set": "toy",
+  "code": "T002",
+  "category": "Turn It Up",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "20 min"
+ },
+ {
+  "page": 123,
+  "set": "toy",
+  "code": "T003",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "12 min"
+ },
+ {
+  "page": 124,
+  "set": "toy",
+  "code": "T004",
+  "category": "Wild Card",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "15 min"
+ },
+ {
+  "page": 125,
+  "set": "toy",
+  "code": "T005",
+  "category": "Classic Heat",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "15 min"
+ },
+ {
+  "page": 126,
+  "set": "toy",
+  "code": "T006",
+  "category": "Turn It Up",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "15 min"
+ },
+ {
+  "page": 127,
+  "set": "toy",
+  "code": "T007",
+  "category": "Focus on You",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "12 min"
+ },
+ {
+  "page": 128,
+  "set": "toy",
+  "code": "T008",
+  "category": "Soft Touch",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "8 min"
+ },
+ {
+  "page": 129,
+  "set": "toy",
+  "code": "T009",
+  "category": "Flirty Fun",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 130,
+  "set": "toy",
+  "code": "T010",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "Varies"
+ },
+ {
+  "page": 131,
+  "set": "toy",
+  "code": "T011",
+  "category": "Wild Card",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "20 min"
+ },
+ {
+  "page": 132,
+  "set": "toy",
+  "code": "T012",
+  "category": "Classic Heat",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "12 min"
+ },
+ {
+  "page": 133,
+  "set": "travel",
+  "code": "TR001",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "15 min"
+ },
+ {
+  "page": 134,
+  "set": "travel",
+  "code": "TR002",
+  "category": "Flirty Fun",
+  "rarity": "Rare",
+  "spice": 3,
+  "time": "Flight"
+ },
+ {
+  "page": 135,
+  "set": "travel",
+  "code": "TR003",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 4,
+  "time": "15 min"
+ },
+ {
+  "page": 136,
+  "set": "travel",
+  "code": "TR004",
+  "category": "Wild Card",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "12 min"
+ },
+ {
+  "page": 137,
+  "set": "travel",
+  "code": "TR005",
+  "category": "Focus on You",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "Extra hours"
+ },
+ {
+  "page": 138,
+  "set": "travel",
+  "code": "TR006",
+  "category": "Wild Card",
+  "rarity": "Rare",
+  "spice": 5,
+  "time": "15 min"
+ },
+ {
+  "page": 139,
+  "set": "travel",
+  "code": "TR007",
+  "category": "Turn It Up",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "Half day"
+ },
+ {
+  "page": 140,
+  "set": "travel",
+  "code": "TR008",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "Evening"
+ },
+ {
+  "page": 141,
+  "set": "travel",
+  "code": "TR009",
+  "category": "Turn It Up",
+  "rarity": "Rare",
+  "spice": 4,
+  "time": "15 min"
+ },
+ {
+  "page": 142,
+  "set": "travel",
+  "code": "TR010",
+  "category": "Classic Heat",
+  "rarity": "Common",
+  "spice": 3,
+  "time": "20 min"
+ },
+ {
+  "page": 143,
+  "set": "travel",
+  "code": "TR011",
+  "category": "Flirty Fun",
+  "rarity": "Uncommon",
+  "spice": 3,
+  "time": "Travel day"
+ },
+ {
+  "page": 144,
+  "set": "travel",
+  "code": "TR012",
+  "category": "Flirty Fun",
+  "rarity": "Common",
+  "spice": 2,
+  "time": "15 min"
+ }
+]

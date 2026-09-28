@@ -83,11 +83,17 @@ provision_caddy() {
   [ "$(id -u)" -eq 0 ] || return 0
   if ! command -v caddy >/dev/null; then
     log "Installing Caddy…"
-    apt-get install -y -qq debian-keyring debian-archive-keyring apt-transport-https curl >/dev/null
+    apt-get install -y -qq debian-keyring debian-archive-keyring apt-transport-https curl gnupg >/dev/null
+    # apt verifies signatures as the unprivileged _apt user, so the keyring and
+    # list must be world-readable despite this script's umask 077
+    rm -f /usr/share/keyrings/caddy-stable-archive-keyring.gpg
     curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
     curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list
+    chmod 644 /usr/share/keyrings/caddy-stable-archive-keyring.gpg /etc/apt/sources.list.d/caddy-stable.list
     apt-get update -qq >/dev/null && apt-get install -y -qq caddy >/dev/null
   fi
+  command -v caddy >/dev/null || fail "Caddy did not install — see the apt output above."
+  mkdir -p /etc/caddy
   if ! grep -q "$DOMAIN" /etc/caddy/Caddyfile 2>/dev/null; then
     log "Writing Caddyfile for ${DOMAIN}…"
     cat > /etc/caddy/Caddyfile <<CADDY
@@ -104,6 +110,7 @@ ${DOMAIN}, www.${DOMAIN} {
 	}
 }
 CADDY
+    chmod 644 /etc/caddy/Caddyfile
     systemctl enable --now caddy >/dev/null 2>&1 || true
     systemctl reload caddy || systemctl restart caddy
   fi
