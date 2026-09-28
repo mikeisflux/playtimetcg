@@ -13,6 +13,7 @@ hard-coded.
 |---|---|
 | `DIVINITYCOIN_API_URL` | Base URL of the DivinityCoin API (`https://divinitycoin.com`, or the VPN address `http://10.10.0.1:3001` for the internal API). |
 | `DIVINITYCOIN_API_KEY` | Partner key, sent as `X-Internal-Key` on every server-to-server call. |
+| `DIVINITYCOIN_PUBLIC_KEY` | Publishable key, if DivinityCoin issues one alongside the API key. Stored for the hosted checkout; not required by the server-to-server calls. |
 | `DIVINITYCOIN_PARTNER_SLUG` | Our partner id on DivinityCoin (`playtimetcg`). Sent as `X-Partner`. |
 | `DIVINITYCOIN_WEBHOOK_SECRET` | HMAC-SHA256 secret DivinityCoin signs webhook deliveries with. |
 | `DIVINITYCOIN_CHECKOUT_PATH` | Hosted checkout endpoint path (default `/api/partner/checkout`). |
