@@ -3,6 +3,7 @@
 #
 #   First-time server setup:   sudo ./scripts/deploy.sh setup
 #   Deploy latest code:        sudo ./scripts/deploy.sh          (zero-downtime)
+#   Install/repair Caddy+TLS:  sudo ./scripts/deploy.sh caddy
 #   Tail app logs:             ./scripts/deploy.sh logs
 #   Service status:            ./scripts/deploy.sh status
 #
@@ -92,7 +93,7 @@ provision_caddy() {
     curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
     curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list
     chmod 644 /usr/share/keyrings/caddy-stable-archive-keyring.gpg /etc/apt/sources.list.d/caddy-stable.list
-    apt-get update -qq >/dev/null && apt-get install -y -qq caddy >/dev/null
+    apt-get update -qq && apt-get install -y -qq caddy
   fi
   command -v caddy >/dev/null || fail "Caddy did not install — see the apt output above."
   mkdir -p /etc/caddy
@@ -232,9 +233,16 @@ case "$cmd" in
       fail "Deploy rolled back. Check: pm2 logs ${SERVICE}"
     fi
     rm -rf .next-prev
+    provision_caddy
     log "Deployed $(git rev-parse --short HEAD) ✔"
+    ;;
+  caddy)
+    [ "$(id -u)" -eq 0 ] || fail "caddy needs root (sudo)."
+    provision_caddy
+    systemctl status caddy --no-pager | head -3
+    log "Caddy ready — certificate for ${DOMAIN} issues on first request (journalctl -u caddy -f to watch)."
     ;;
   logs) pm2 logs "$SERVICE" --lines 100 ;;
   status) pm2 status "$SERVICE" ;;
-  *) fail "Unknown command: $cmd (setup | deploy | logs | status)" ;;
+  *) fail "Unknown command: $cmd (setup | deploy | caddy | logs | status)" ;;
 esac
