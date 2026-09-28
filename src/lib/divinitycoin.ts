@@ -91,6 +91,7 @@ class DivinityCoinClient {
     });
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
+      console.error(`[divinitycoin] ${method} ${c.baseUrl}${endpoint} -> HTTP ${res.status} ${txt.slice(0, 300)}`);
       throw new Error(`DivinityCoin ${res.status}: ${txt.slice(0, 300)}`);
     }
     return res.json() as Promise<T>;
@@ -124,6 +125,7 @@ class DivinityCoinClient {
       const c = await config();
       if (!c.apiKey) return { ok: false, detail: "API key not set" };
       const res = await fetch(`${c.baseUrl}/internal/health`, { headers: { "X-Internal-Key": c.apiKey }, signal: AbortSignal.timeout(5000) });
+      if (!res.ok) console.error(`[divinitycoin] GET ${c.baseUrl}/internal/health -> HTTP ${res.status}`);
       return { ok: res.ok, detail: res.ok ? await res.text() : `HTTP ${res.status}` };
     } catch (err) { return { ok: false, detail: String(err) }; }
   }
