@@ -398,3 +398,94 @@ select.input { appearance: none; }
 .pack3d--ready { cursor: pointer; }
 .pack3d--ready:hover .pack3d__wrap { border-color: var(--text); }
 .answers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 12px; }
+
+/* ── SEO / navigation additions ─────────────────────────────────────────── */
+/* Breadcrumb trail on inner pages (src/components/Breadcrumbs.tsx). */
+.crumbs { padding-top: 20px; }
+.crumbs ol { display: flex; flex-wrap: wrap; gap: 6px 0; margin: 0; padding: 0; list-style: none; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); }
+.crumbs li { display: flex; align-items: center; }
+.crumbs li + li::before { content: "/"; margin: 0 10px; color: var(--text-faint); }
+.crumbs a { color: var(--text-muted); }
+.crumbs a:hover { color: var(--text-strong); }
+.crumbs [aria-current="page"] { color: var(--text-strong); }
+/* "Next up" links that chain the guide pages together. */
+.nextup { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: baseline; padding: 24px 0 0; border-top: 2px solid var(--rule); }
+.nextup__label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); }
+.nextup a { font-family: var(--font-display); font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-strong); }
+.nextup a:hover { color: var(--primary); }
+
+/* ───────── Admin mail client (/admin/emails) ─────────
+   Three panes on desktop, list + reader stacked ≤1200px, one pane at a time
+   ≤900px. Zero radius, no shadows; structure comes from hairline rules. */
+.admMail { display: grid; grid-template-columns: 164px minmax(280px, 400px) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); border: 1px solid var(--rule); background: var(--surface); height: calc(100vh - 190px); min-height: 540px; }
+.admMail__bar { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--rule); flex-wrap: wrap; background: var(--ink); }
+.admMail__bar .grow { flex: 1; min-width: 160px; max-width: none; } .admMail__bar .admCheck { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+.admMail__bulk { padding-left: 8px; border-left: 1px solid var(--rule-strong); } .admMail__keys { font-size: 10px; }
+.admSpin { display: inline-block; width: 9px; height: 9px; border: 2px solid var(--rule-strong); border-top-color: var(--text-strong); animation: admSpin 700ms linear infinite; }
+@keyframes admSpin { to { transform: rotate(360deg); } }
+.admMail__folders { border-right: 1px solid var(--rule); display: flex; flex-direction: column; padding: 8px 0; overflow-y: auto; min-height: 0; }
+.admMail__folders button { background: transparent; border: 0; text-align: left; padding: 9px 14px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); display: flex; justify-content: space-between; gap: 8px; cursor: pointer; }
+.admMail__folders button:hover { color: var(--text-strong); } .admMail__folders button.on { color: var(--text-strong); background: var(--surface-2); border-left: 3px solid var(--primary); padding-left: 11px; }
+.admMail__list { border-right: 1px solid var(--rule); display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.admMail__rows { flex: 1; overflow-y: auto; min-height: 0; } .admMail__pager { padding: 8px 10px; border-top: 1px solid var(--rule); }
+.admMailRow { display: grid; grid-template-columns: 14px 16px minmax(0, 1fr) auto; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--rule); cursor: pointer; font-size: 13px; color: var(--text-muted); align-items: start; }
+.admMailRow:hover { background: rgba(255,255,255,0.03); } .admMailRow.sel { background: var(--surface-2); } .admMailRow.chk { background: rgba(255,92,138,0.08); }
+.admMailRow.cur { outline: 1px solid var(--text); outline-offset: -1px; }
+.admMailRow input[type="checkbox"] { width: 14px; height: 14px; margin: 2px 0 0; accent-color: var(--primary); cursor: pointer; }
+.admMailRow .admStar { margin-top: 1px; }
+.admMailRow .who, .admMailRow .subj, .admMailRow .snip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admMailRow .who { color: var(--text-soft); } .admMailRow .subj { font-size: 12px; color: var(--text-muted); } .admMailRow .snip { font-size: 11px; color: var(--text-dim); }
+.admMailRow.unread .who, .admMailRow.unread .subj { color: var(--text-strong); font-weight: 700; }
+.admMailRow .meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); white-space: nowrap; }
+.admMailRow .meta .admBadge { font-size: 9px; padding: 2px 5px; }
+.admMail__read { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+.admMail__hd { padding: 12px 16px; border-bottom: 1px solid var(--rule); display: flex; flex-direction: column; gap: 8px; flex: none; }
+.admMail__subject { font-family: var(--font-body); font-weight: 600; font-size: 16px; color: var(--text-strong); margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.admMail__kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 14px; font-size: 12px; color: var(--text-muted); }
+.admMail__kv b { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); font-weight: 400; padding-top: 2px; }
+.admMail__kv span { overflow-wrap: anywhere; } .admMail__body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; }
+.admMail__body iframe { flex: none; width: 100%; height: 100%; min-height: 380px; border: 0; background: var(--ink); }
+.admMail__body .txt { flex: none; padding: 16px; white-space: pre-wrap; font-size: 14px; line-height: 1.55; color: var(--text-soft); overflow-wrap: anywhere; }
+.admMail__attach { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 16px; border-top: 1px solid var(--rule); flex: none; }
+.admMail__events { padding: 10px 16px; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 6px; flex: none; }
+.admMailThread, .admMailThread__item { border-top: 1px solid var(--rule); } .admMailThread { flex: none; }
+.admMailThread__item > button { width: 100%; text-align: left; background: transparent; border: 0; padding: 8px 16px; color: var(--text-dim); font-size: 12px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; cursor: pointer; }
+.admMailThread__item > button b { color: var(--text-muted); font-weight: 600; }
+.admMailThread__item > button:hover, .admMailThread__item.open > button { color: var(--text-strong); }
+.admMailThread__item.open > button b { color: var(--text-strong); }
+.admMailThread__body { padding: 0 16px 12px 32px; white-space: pre-wrap; font-size: 13px; line-height: 1.5; color: var(--text-soft); max-height: 320px; overflow: auto; overflow-wrap: anywhere; }
+.admMail__back { display: none; }
+
+/* composer: docked panel, bottom-right */
+.admMailCompose { position: fixed; right: 24px; bottom: 0; z-index: 45; width: min(760px, calc(100vw - 48px)); height: min(720px, calc(100vh - 24px)); background: var(--surface); border: 2px solid var(--rule-strong); border-bottom: 0; display: flex; flex-direction: column; }
+.admMailCompose__hd { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; border-bottom: 2px solid var(--rule); background: var(--ink); flex: none; }
+.admMailCompose__err { color: var(--heat-6); font-size: 12px; padding: 8px 14px; border-bottom: 1px solid var(--rule); border-left: 3px solid var(--heat-6); background: var(--surface-2); flex: none; }
+.admMailCompose__body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.admMailCompose__line { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 3px 14px; border-bottom: 1px solid var(--rule); flex: none; }
+.admMailCompose__line label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); }
+.admMailCompose__line input { background: transparent; border: 0; color: var(--text); font-size: 13px; font-family: var(--font-body); padding: 7px 0; width: 100%; outline: none; min-width: 0; }
+.admMailCompose__line input::placeholder { color: var(--text-faint); } .admMailCompose__line.bad input { color: var(--heat-6); } .admMailCompose__line select.admInput { max-width: 180px; }
+.admMailCompose__ed { flex: 1; display: flex; flex-direction: column; min-height: 0; } .admMailCompose__ed .admEditor { border: 0; flex: 1; }
+.admMailCompose__att { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 8px 14px; border-top: 1px solid var(--rule); flex: none; }
+.admMailCompose__ft { border-top: 2px solid var(--rule); padding: 10px 14px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: var(--ink); flex: none; }
+
+@media (max-width: 1200px) {
+  .admMail { grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: auto minmax(320px, 46vh) minmax(0, 1fr); height: auto; min-height: 0; }
+  .admMail__read { grid-column: 1 / -1; border-top: 2px solid var(--rule); min-height: 480px; }
+  .admMail__list { border-right: 0; }
+}
+@media (max-width: 900px) {
+  .admMail { display: flex; flex-direction: column; }
+  .admMail__folders { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--rule); padding: 0; flex: none; }
+  .admMail__folders button { white-space: nowrap; padding: 12px 14px; }
+  .admMail__folders button.on { border-left: 0; border-bottom: 2px solid var(--primary); padding-left: 14px; }
+  .admMail__rows { max-height: none; }
+  .admMail__list { min-height: 60vh; }
+  .admMail__read { display: none; }
+  .admMail--read .admMail__bar, .admMail--read .admMail__folders, .admMail--read .admMail__list { display: none; }
+  .admMail--read .admMail__read { display: flex; min-height: 80vh; }
+  .admMail__back { display: inline-flex; }
+  .admMail__keys { display: none; }
+  .admMailCompose { right: 0; width: 100vw; height: 100vh; border: 0; }
+  .admMailCompose__line { grid-template-columns: 48px minmax(0, 1fr) auto; }
+}
