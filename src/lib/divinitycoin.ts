@@ -129,8 +129,14 @@ class DivinityCoinClient {
     return this.call<HoldResult>("hold", { platformUserId: userId, amount: amountDollars, pledgeId: reference, projectId: DC_PROJECT_ID, expiresAt: expiresAt?.toISOString() })
       .catch((e): HoldResult => { if (e instanceof DivinityApiError) return { success: false, error: String(e.body.message || e.body.error || e.message) }; throw e; });
   }
-  releaseHold(reference: string) { return this.call<SimpleResult>("release", { pledgeId: reference }); }
-  captureHold(reference: string) { return this.call<SimpleResult>("capture", { pledgeId: reference }); }
+  async releaseHold(reference: string): Promise<SimpleResult> {
+    if ((await config()).testMode) return { success: true };
+    return this.call<SimpleResult>("release", { pledgeId: reference });
+  }
+  async captureHold(reference: string): Promise<SimpleResult> {
+    if ((await config()).testMode) return { success: true };
+    return this.call<SimpleResult>("capture", { pledgeId: reference });
+  }
 
   /* ─── hosted checkout (cents) ─── */
   async createCheckout(input: CheckoutInput): Promise<CheckoutResult> {

@@ -23,7 +23,8 @@ export default function Subscriptions() {
   return (
     <>
       {toast.node}
-      <PageHead title="Subscriptions" sub="monthly_cards ships three physical cards a month; online_play unlocks the digital game. Renewals arrive via DivinityCoin webhooks.">
+      <PageHead title="Subscriptions" sub="monthly_cards ships three physical cards a month; online_play unlocks the digital game. Renewals are charged to the saved card every period by the site (automatic every 15 minutes; run now to force a pass).">
+        <button className="admBtn" onClick={async () => { try { const r = await api<{ charged: number; failed: number; ended: number; skipped: boolean }>("/api/admin/subscriptions/renewals", { method: "POST" }); toast.ok(r.skipped ? "A renewal pass is already running" : `Renewals: ${r.charged} charged, ${r.failed} failed, ${r.ended} ended`); list.reload(); } catch (e) { toast.err(e); } }}>Run renewals now</button>
         {view === "fulfillment" && <a className="admBtn" href="/api/admin/subscriptions?view=fulfillment&format=csv">Export shipping CSV</a>}
       </PageHead>
       <div className="admTabs">

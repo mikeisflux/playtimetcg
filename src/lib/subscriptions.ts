@@ -88,8 +88,13 @@ export async function chargePeriod(subId: string, periodStart: Date): Promise<{ 
   const sub = await prisma.subscription.findUnique({ where: { id: subId }, include: { user: true } });
   if (!sub) return { ok: false, error: "subscription not found" };
   const pm = sub.providerRef?.startsWith("pm:") ? sub.providerRef.slice(3) : null;
-  if (!pm) return { ok: false, error: "no saved card" };
   const ref = periodReference(sub.id, periodStart);
+  if (!pm) {
+    /* No card on file (setup never completed, or a legacy row): record the
+       failure so the renewal pass retries daily and ends it after a week. */
+    await recordFailedPeriod(sub.id, sub.priceCents, periodStart, "no saved card on file");
+    return { ok: false, error: "no saved card" };
+  }
   const already = await prisma.subscriptionInvoice.findFirst({ where: { subscriptionId: sub.id, status: "paid", paymentRef: { startsWith: `${ref}|` } } });
   if (already) return { ok: true };
   const s = await getSettings(["SITE_NAME"]);
