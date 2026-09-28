@@ -1,0 +1,32 @@
+{
+  "die": [
+    { "faces": [1, 2],  "category": "Soft Touch",   "color": "#3FD6C8" },
+    { "faces": [3, 4],  "category": "Flirty Fun",   "color": "#5AB8F0" },
+    { "faces": [5, 6],  "category": "Classic Heat", "color": "#A68CF5" },
+    { "faces": [7, 8],  "category": "Turn It Up",   "color": "#FF5C8A" },
+    { "faces": [9, 10], "category": "Wild Card",    "color": "#FF6A3D" },
+    { "faces": [11],    "category": "Focus on You", "color": "#E86BD8" },
+    { "faces": [12],    "category": "Free Play",    "color": "#FFD23F" }
+  ],
+  "sampleCards": [
+    { "category": "Soft Touch",   "id": "B003", "title": "Feather Tease",    "rarity": "Common",   "spice": 1, "time": "5 min",  "text": "Use a soft feather or scarf to lightly trace over your partner’s body for 5 minutes. No hands allowed." },
+    { "category": "Flirty Fun",   "id": "B010", "title": "Blindfold Feed",   "rarity": "Common",   "spice": 2, "time": "8 min",  "text": "Blindfold your partner and feed them something sweet or savory while describing how good they look." },
+    { "category": "Classic Heat", "id": "B016", "title": "Position Remix",   "rarity": "Common",   "spice": 3, "time": "15 min", "text": "Start in your usual favorite position, then switch to a completely different one halfway through." },
+    { "category": "Turn It Up",   "id": "B026", "title": "Temperature Play", "rarity": "Uncommon", "spice": 3, "time": "10 min", "text": "Alternate between something warm and something cool on your partner’s skin." },
+    { "category": "Wild Card",    "id": "B032", "title": "Dice Control",     "rarity": "Common",   "spice": 3, "time": "Varies", "text": "Roll the die. The number is how many minutes one partner is in complete control." },
+    { "category": "Focus on You", "id": "B038", "title": "Guided Hands",     "rarity": "Common",   "spice": 2, "time": "10 min", "text": "The receiving partner places their hands over the giving partner’s and shows exactly the pressure and speed they want." },
+    { "category": "Free Play",    "id": "B043", "title": "Dealer’s Choice",  "rarity": "Common",   "spice": 3, "time": "Varies", "text": "The roller picks any card from the entire deck and you both do it." }
+  ],
+  "rarities": [
+    { "name": "Common",   "frame": "rgba(255,255,255,0.28)", "body": "The backbone of the deck. Reliable, repeatable, always welcome." },
+    { "name": "Uncommon", "frame": "linear-gradient(135deg, #6f7681 0%, #e8ecf2 22%, #7d848f 48%, #dfe4ea 74%, #6f7681 100%)", "body": "Metallic silver frame. A little more specific, a little more of an occasion." },
+    { "name": "Rare",     "frame": "linear-gradient(135deg, #3FD6C8, #5AB8F0, #A68CF5, #E86BD8, #FF5C8A, #FF6A3D, #FFD23F)", "body": "Full holographic foil. The cards worth building a night around." }
+  ],
+  "heatLevels": [
+    { "level": 1, "name": "Warm",    "color": "#3FD6C8", "body": "Touch, talk, anticipation." },
+    { "level": 2, "name": "Playful", "color": "#5AB8F0", "body": "Teasing with intent." },
+    { "level": 3, "name": "Hot",     "color": "#A68CF5", "body": "Straightforwardly sexual." },
+    { "level": 4, "name": "Bold",    "color": "#FF5C8A", "body": "Asks something of you." },
+    { "level": 5, "name": "All in",  "color": "#FF6A3D", "body": "Rare, deliberate, never a surprise." }
+  ]
+}

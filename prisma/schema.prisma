@@ -1,0 +1,468 @@
+// Play Time — SQL schema (Prisma ORM 7, PostgreSQL).
+// DATABASE_URL is read by prisma.config.ts (CLI) and src/lib/db.ts (runtime).
+
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  runtime                = "nodejs"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────── Users & auth ─────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  isAdmin       Boolean   @default(false)
+  ageVerifiedAt DateTime?
+  resetToken    String?   // sha256 of the password-reset token
+  resetExpiry   DateTime?
+  marketingOptIn Boolean  @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  orders        Order[]
+  subscriptions Subscription[]
+  cards         UserCard[]
+  packs         UserPack[]
+  openings      PackOpening[]
+  hostedRooms   GameRoom[] @relation("host")
+  guestRooms    GameRoom[] @relation("guest")
+  addresses     Address[]
+  creditLedger  CreditLedger[]
+  auditLogs     AdminAuditLog[]
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  line1     String
+  line2     String?
+  city      String
+  region    String
+  postal    String
+  country   String   @default("US")
+  phone     String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ───────────────────────── Catalog ─────────────────────────
+
+// kind: set | expansion | digital_pack | subscription
+model Product {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  kind           String
+  name           String
+  tag            String?
+  description    String?  // long description (owner supplied)
+  priceCents     Int
+  currency       String   @default("USD")
+  accent         String   @default("#FF5C8A")
+  includes       Json?    // string[]
+  requiresChoice Json?    // { type: "expansion", count: 2 }
+  featured       Boolean  @default(false)
+  active         Boolean  @default(true)
+  digital        Boolean  @default(false) // no shipping; grants cards / access
+  cardSetId      String?  // digital packs draw from this set
+  cardSet        CardSet? @relation(fields: [cardSetId], references: [id])
+  packSize       Int?     // number of cards per digital pack
+  subPlan        String?  // for kind=subscription: monthly_cards | online_play
+  subInterval    String?  // month | year
+  imageUrl       String?
+  imageSlot      String?  // site-prod-base etc. (design handoff slots)
+  sortIndex      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  orderItems OrderItem[]
+  packs      UserPack[]
+  seo        SeoEntry?
+
+  @@index([kind, active])
+}
+
+// ───────────────────────── Orders ─────────────────────────
+
+// status: pending | awaiting_payment | paid | fulfilled | shipped | cancelled | refunded | failed
+model Order {
+  id              String    @id @default(cuid())
+  number          Int       @unique @default(autoincrement())
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email           String
+  status          String    @default("pending")
+  subtotalCents   Int
+  shippingCents   Int       @default(0)
+  taxCents        Int       @default(0)
+  discountCents   Int       @default(0)
+  totalCents      Int
+  currency        String    @default("USD")
+  paymentMethod   String?   // divinitycoin_checkout | divinitycoin_credits | comp
+  paymentRef      String?   // DivinityCoin payment/session id
+  creditHoldId    String?   // DivinityCoin hold id (credits path)
+  shipping        Json?     // address snapshot
+  needsShipping   Boolean   @default(true)
+  trackingNumber  String?
+  trackingCarrier String?
+  notes           String?
+  discreetPackaging Boolean @default(true)
+  paidAt          DateTime?
+  fulfilledAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  items OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([email])
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String?
+  product    Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  name       String
+  unitCents  Int
+  qty        Int
+  choices    Json?    // e.g. chosen expansion slugs for the bundle
+  digitalGranted Boolean @default(false)
+
+  @@index([orderId])
+}
+
+// ───────────────────────── Subscriptions ─────────────────────────
+
+// plan: monthly_cards (3 physical cards/month) | online_play (digital game access)
+// status: active | past_due | cancelled | expired | pending
+model Subscription {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan             String
+  status           String    @default("pending")
+  priceCents       Int
+  interval         String    @default("month")
+  providerRef      String?   @unique // DivinityCoin subscription id
+  currentPeriodEnd DateTime?
+  cancelAtPeriodEnd Boolean  @default(false)
+  shipping         Json?     // for monthly_cards
+  startedAt        DateTime  @default(now())
+  cancelledAt      DateTime?
+  updatedAt        DateTime  @updatedAt
+
+  invoices SubscriptionInvoice[]
+
+  @@index([userId, plan])
+  @@index([status])
+}
+
+model SubscriptionInvoice {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  amountCents    Int
+  status         String       // paid | failed | refunded
+  periodStart    DateTime
+  periodEnd      DateTime
+  paymentRef     String?
+  createdAt      DateTime     @default(now())
+
+  @@index([subscriptionId])
+}
+
+// ───────────────────────── Cards & collections ─────────────────────────
+
+// kind: base | expansion | monthly | promo
+model CardSet {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  kind        String
+  accent      String   @default("#FF5C8A")
+  releaseDate DateTime?
+  sortIndex   Int      @default(0)
+  cards       Card[]
+  products    Product[]
+  packs       UserPack[]
+}
+
+model Card {
+  id        String   @id @default(cuid())
+  code      String   @unique // B003, DN01…
+  setId     String
+  set       CardSet  @relation(fields: [setId], references: [id], onDelete: Cascade)
+  title     String
+  category  String   // Soft Touch … Free Play
+  rarity    String   // Common | Uncommon | Rare
+  spice     Int      @default(1)
+  time      String   @default("5 min")
+  text      String
+  imageUrl  String?
+  active    Boolean  @default(true)
+  sortIndex Int      @default(0)
+  owners    UserCard[]
+
+  @@index([setId])
+  @@index([category])
+}
+
+model UserCard {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardId     String
+  card       Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  qty        Int      @default(1)
+  source     String   @default("pack") // starter | pack | monthly | admin
+  acquiredAt DateTime @default(now())
+
+  @@unique([userId, cardId])
+  @@index([userId])
+}
+
+// Unopened digital packs owned by a user.
+model UserPack {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  setId     String
+  set       CardSet  @relation(fields: [setId], references: [id], onDelete: Cascade)
+  size      Int      @default(3)
+  qty       Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model PackOpening {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  setSlug   String
+  cards     Json     // [{ code, title, rarity, category, isNew }]
+  openedAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ───────────────────────── Online play ─────────────────────────
+
+// status: waiting | playing | ended
+model GameRoom {
+  id          String   @id @default(cuid())
+  code        String   @unique // 6-char join code
+  hostId      String
+  host        User     @relation("host", fields: [hostId], references: [id], onDelete: Cascade)
+  guestId     String?
+  guest       User?    @relation("guest", fields: [guestId], references: [id], onDelete: SetNull)
+  status      String   @default("waiting")
+  state       Json     // full game state (see src/lib/game.ts)
+  version     Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([hostId])
+  @@index([status])
+}
+
+// ───────────────────────── Email ─────────────────────────
+
+// direction: in | out    channel: email | contact | reply | system
+// status (outbound): queued | sent | delivered | opened | clicked | bounced | failed | spam
+model Message {
+  id                String   @id @default(cuid())
+  direction         String
+  channel           String   @default("email")
+  fromEmail         String
+  fromName          String?
+  toEmail           String?
+  cc                String?
+  subject           String
+  text              String?
+  html              String?
+  read              Boolean  @default(false)
+  starred           Boolean  @default(false)
+  archived          Boolean  @default(false)
+  threadId          String?
+  status            String?
+  statusMessage     String?
+  sendgridMessageId String?  @unique
+  templateSlug      String?
+  userId            String?
+  orderId           String?
+  headers           Json?
+  events            Json?    // SendGrid webhook events
+  createdAt         DateTime @default(now())
+  sentAt            DateTime?
+
+  attachments Attachment[]
+
+  @@index([direction, archived, createdAt])
+  @@index([threadId])
+  @@index([toEmail])
+}
+
+model Attachment {
+  id          String  @id @default(cuid())
+  messageId   String
+  message     Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  filename    String
+  contentType String
+  size        Int
+  data        Bytes
+  inline      Boolean @default(false)
+  contentId   String?
+
+  @@index([messageId])
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  subject     String
+  html        String
+  text        String?
+  isActive    Boolean  @default(true)
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions EmailTemplateVersion[]
+}
+
+model EmailTemplateVersion {
+  id         String        @id @default(cuid())
+  templateId String
+  template   EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  version    Int
+  subject    String
+  html       String
+  text       String?
+  changedBy  String?
+  changeNote String?
+  createdAt  DateTime      @default(now())
+
+  @@unique([templateId, version])
+}
+
+// ───────────────────────── SEO & content ─────────────────────────
+
+model SeoEntry {
+  id            String   @id @default(cuid())
+  path          String   @unique // "/", "/shop", "/shop/base"
+  title         String?
+  description   String?
+  keywords      String?
+  canonical     String?
+  ogTitle       String?
+  ogDescription String?
+  ogImage       String?
+  robots        String?  // "index,follow" | "noindex,nofollow"
+  jsonLd        String?  // raw JSON-LD
+  priority      Float?   // sitemap
+  changeFreq    String?  // sitemap
+  productId     String?  @unique
+  product       Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  updatedAt     DateTime @updatedAt
+}
+
+model Redirect {
+  id        String   @id @default(cuid())
+  fromPath  String   @unique
+  toPath    String
+  code      Int      @default(301)
+  createdAt DateTime @default(now())
+}
+
+// Admin-editable content pages (privacy, terms, shipping, returns, about…).
+model Page {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  html      String
+  published Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// ───────────────────────── Payments / integrations ─────────────────────────
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  provider    String    // divinitycoin | sendgrid
+  eventId     String
+  type        String
+  payload     Json
+  status      String    @default("received") // received | processed | ignored | failed
+  error       String?
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+
+  @@unique([provider, eventId])
+  @@index([provider, receivedAt])
+}
+
+// Local mirror of DivinityCoin credit activity for this user (balance truth
+// lives on DivinityCoin; this is the audit trail shown in the dashboard).
+model CreditLedger {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         String   // redemption | hold | capture | release
+  amountCents  Int
+  balanceAfterCents Int?
+  reference    String?  // order id / hold id / code last4
+  description  String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action     String
+  resource   String
+  resourceId String?
+  before     Json?
+  after      Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([createdAt])
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String?
+  createdAt DateTime @default(now())
+}

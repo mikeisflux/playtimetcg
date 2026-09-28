@@ -1,0 +1,43 @@
+{
+  "currency": "USD",
+  "_note": "Prices for sets come from the crowdfunding reward structure. PACK price (14) is a PLACEHOLDER — confirm with the owner before launch.",
+  "products": [
+    {
+      "id": "base",
+      "name": "Base set",
+      "price": 35,
+      "tag": "Start here",
+      "accent": "#3FD6C8",
+      "includes": ["72 cards", "12-sided die", "Drawstring bag", "Rulebook + quick start card"],
+      "imageSlot": "site-prod-base"
+    },
+    {
+      "id": "bundle",
+      "name": "Couple’s bundle",
+      "price": 55,
+      "tag": "Base + 2 packs",
+      "accent": "#FF5C8A",
+      "includes": ["Base set", "Two expansion packs of your choice", "12-sided die", "Drawstring bag"],
+      "requiresChoice": { "type": "expansion", "count": 2 },
+      "imageSlot": "site-prod-bundle"
+    },
+    {
+      "id": "collector",
+      "name": "Collector",
+      "price": 89,
+      "tag": "Everything",
+      "accent": "#FFD23F",
+      "featured": true,
+      "includes": ["Base set", "All six expansion packs", "Premium storage box", "Exclusive Rare cards"],
+      "imageSlot": "site-prod-collector"
+    }
+  ],
+  "expansions": [
+    { "id": "date-night", "name": "Date Night",        "price": 14, "cards": 12, "accent": "#5AB8F0", "hook": "Turn the evening out into the main event." },
+    { "id": "weekend",    "name": "Weekend Getaway",   "price": 14, "cards": 12, "accent": "#A68CF5", "hook": "Hotel keys, do not disturb, zero interruptions." },
+    { "id": "long-term",  "name": "Long-Term Couples", "price": 14, "cards": 12, "accent": "#3FD6C8", "hook": "You know every move. Time to make some new ones." },
+    { "id": "quick",      "name": "Quick & Dirty",     "price": 14, "cards": 12, "accent": "#FF5C8A", "hook": "Five to fifteen minutes. Still counts." },
+    { "id": "toy",        "name": "Toy-Friendly",      "price": 14, "cards": 12, "accent": "#E86BD8", "hook": "Add one more tool to the night." },
+    { "id": "travel",     "name": "Travel",            "price": 14, "cards": 12, "accent": "#FF6A3D", "hook": "New city, new room, different rules." }
+  ]
+}
