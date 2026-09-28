@@ -240,6 +240,10 @@ build_app() {
   NEXT_PUBLIC_PT_BUILD="$(date -u +%Y-%m-%d).$(git rev-parse --short=10 HEAD 2>/dev/null || date +%s)"
   export NEXT_PUBLIC_PT_BUILD
   rm -rf .next-build
+  # The live build's generated route types are picked up by tsconfig's
+  # "**/*.ts" include; after a route is removed they no longer resolve and
+  # fail the type check. They are not needed at runtime, so drop them.
+  rm -rf .next/types .next-prev/types
   NEXT_DIST_DIR=.next-build npx next build
   # atomic-ish swap: the live workers keep the old .next until reload
   rm -rf .next-prev; [ -d .next ] && mv .next .next-prev; mv .next-build .next
