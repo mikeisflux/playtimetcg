@@ -330,6 +330,8 @@ select.input { appearance: none; }
 .prose ol { list-style: decimal; }
 .prose li { margin-bottom: 6px; }
 .prose a { text-decoration: underline; }
+.prose .t-lead { font-size: 20px; line-height: 1.5; color: var(--text); margin-bottom: 8px; }
+.prose h2:not(:first-of-type) { padding-top: 32px; border-top: 2px solid var(--rule); }
 .prose hr { border: 0; border-top: 1px solid var(--rule); margin: 32px 0; }
 .empty { padding: 48px 0; display: flex; flex-direction: column; gap: 12px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

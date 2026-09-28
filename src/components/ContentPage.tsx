@@ -1,6 +1,6 @@
-/* Owner-supplied text pages (Privacy, Terms, Shipping, Returns). The copy is
-   edited in Admin → Pages and stored as HTML in the Page table. We never write
-   the legal text ourselves; when no published page exists we say so. */
+/* Text pages (Privacy, Terms, Shipping, Returns, FAQ). Seeded from
+   prisma/pages/*.html and edited in Admin → Pages (stored as HTML in the Page
+   table). When no published page exists we say so. */
 import { prisma } from "@/lib/db";
 
 export default async function ContentPage({ slug, fallbackTitle }: { slug: string; fallbackTitle: string }) {

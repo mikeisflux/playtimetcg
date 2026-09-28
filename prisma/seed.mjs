@@ -162,6 +162,7 @@ console.log("✔ Products ensured (3 sets, 6 expansions, 2 subscriptions, 6 digi
 const PAGES = [
   { slug: "privacy", title: "Privacy Policy" }, { slug: "terms", title: "Terms of Service" },
   { slug: "shipping", title: "Shipping" }, { slug: "returns", title: "Returns" },
+  { slug: "faq", title: "Questions, answered." },
 ];
 let pagesCreated = 0;
 for (const pg of PAGES) {

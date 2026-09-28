@@ -73,6 +73,7 @@ export const SITE_ROUTES: { path: string; label: string; priority: number; chang
   { path: "/pricing", label: "Pricing", priority: 0.9, changeFreq: "monthly" },
   { path: "/shop", label: "Shop", priority: 0.95, changeFreq: "weekly" },
   { path: "/play", label: "Play online", priority: 0.8, changeFreq: "monthly" },
+  { path: "/faq", label: "FAQ", priority: 0.7, changeFreq: "monthly" },
   { path: "/contact", label: "Contact", priority: 0.5, changeFreq: "yearly" },
   { path: "/shipping", label: "Shipping", priority: 0.3, changeFreq: "yearly" },
   { path: "/returns", label: "Returns", priority: 0.3, changeFreq: "yearly" },

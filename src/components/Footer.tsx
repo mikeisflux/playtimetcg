@@ -3,7 +3,7 @@ import Link from "next/link";
 const COLS = [
   { head: "Shop", links: [["Base set", "/shop/base"], ["Bundles", "/shop#bundles"], ["Expansions", "/expansions"], ["Play online", "/play"]] },
   { head: "The game", links: [["How to play", "/how-to-play"], ["The deck", "/the-deck"], ["Pricing", "/pricing"]] },
-  { head: "Help", links: [["Shipping", "/shipping"], ["Returns", "/returns"], ["Contact", "/contact"], ["Account", "/account"]] },
+  { head: "Help", links: [["FAQ", "/faq"], ["Shipping", "/shipping"], ["Returns", "/returns"], ["Contact", "/contact"], ["Account", "/account"]] },
   { head: "Legal", links: [["Privacy", "/privacy"], ["Terms", "/terms"]] },
 ];
 
