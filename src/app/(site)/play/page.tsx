@@ -6,6 +6,7 @@ import { hasOnlineAccess } from "@/lib/packs";
 import { money } from "@/lib/content";
 import { buildMetadata } from "@/lib/seo";
 import PlayTabs from "@/components/play/PlayTabs";
+import JoinCodeForm from "@/components/play/JoinCodeForm";
 import Lobby from "@/components/play/Lobby";
 import SoloDie from "@/components/play/SoloDie";
 import type { RoomSummary } from "@/components/play/types";
@@ -45,6 +46,11 @@ function Marketing({ signedIn, product }: { signedIn: boolean; product: Awaited<
           <div className="row">
             {product ? <Link className="btn" href={`/shop/${product.slug}`}>Subscribe — {price}</Link> : <Link className="btn" href="/pricing">See pricing</Link>}
             {!signedIn && <Link className="btn btn--outline" href="/login">Log in</Link>}
+          </div>
+          <div className="panel" style={{ gap: 12, maxWidth: 480, marginTop: 24 }}>
+            <div className="t-item">Got a code from your partner?</div>
+            <p className="t-body-sm">One subscription per couple. If your partner opened a room, join with their code — no account or subscription needed.</p>
+            <JoinCodeForm />
           </div>
         </div>
         <div className="panel panel--surface" style={{ gap: 20 }}>

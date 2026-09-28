@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { publicState, reduce, firstMatch, type Action, type Answer, type GameState } from "@/lib/game";
-import { requirePlayer, json, fail, asState, toJson, statusFor, isParticipant, buildDeck, resolveCard } from "../../_shared";
+import { requireUser, json, fail, asState, toJson, statusFor, isParticipant, buildDeck, resolveCard } from "../../_shared";
 
 type Params = { params: Promise<{ code: string }> };
 type Body = { type?: unknown; [k: string]: unknown };
@@ -9,7 +9,7 @@ const ANSWERS: Answer[] = ["do", "tweak", "save", "pass"];
 
 /* GET ?v=<version>: the room state for a participant, or {unchanged:true}. */
 export async function GET(req: Request, { params }: Params) {
-  const auth = await requirePlayer();
+  const auth = await requireUser();
   if (auth.res) return auth.res;
   const { code } = await params;
   const room = await prisma.gameRoom.findUnique({ where: { code: code.toUpperCase() } });
@@ -64,7 +64,7 @@ function buildAction(b: Body, me: { id: string; name: string }): Action | string
 
 /* POST: apply one action with an optimistic version check (one retry). */
 export async function POST(req: Request, { params }: Params) {
-  const auth = await requirePlayer();
+  const auth = await requireUser();
   if (auth.res) return auth.res;
   const me = { id: auth.user.id, name: auth.user.name };
   const { code } = await params;

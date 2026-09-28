@@ -1,7 +1,8 @@
 /* Server helpers shared by the /api/play routes and the /play pages. */
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, createSession, hashPassword } from "@/lib/auth";
+import { randomBytes } from "crypto";
 import { hasOnlineAccess } from "@/lib/packs";
 import { ceilingFor, reduce, type DeckSlot, type GameCardRef, type GameState, type Phase } from "@/lib/game";
 import type { GameRoom, User } from "@/generated/prisma/client";
@@ -10,11 +11,34 @@ import type { CollectionItem, PackItem } from "@/components/play/types";
 export const json = (data: unknown, status = 200) => NextResponse.json(data, { status });
 export const fail = (message: string, status = 400) => NextResponse.json({ error: message }, { status });
 
+/* Online play (creating rooms, collection, packs) needs a subscription… */
 export async function requirePlayer(): Promise<{ user: User; res?: undefined } | { user?: undefined; res: NextResponse }> {
   const user = await getSessionUser();
   if (!user) return { res: fail("Sign in to play.", 401) };
   if (!(await hasOnlineAccess(user.id))) return { res: fail("Your account doesn’t have online play yet.", 403) };
   return { user };
+}
+/* …but being IN a room only needs an identity: the partner joins with the
+   code and plays the host's deck. Guests get a lightweight account. */
+export async function requireUser(): Promise<{ user: User; res?: undefined } | { user?: undefined; res: NextResponse }> {
+  const user = await getSessionUser();
+  if (!user) return { res: fail("Sign in, or join with the code your partner sent.", 401) };
+  return { user };
+}
+
+export const GUEST_DOMAIN = "guest.playtimetcg.com";
+export const isGuestUser = (u: { email: string }) => u.email.endsWith(`@${GUEST_DOMAIN}`);
+
+/* A partner who has no account joins with just a name: we create a guest
+   account (no email of their own, random password) and sign them in, so the
+   rest of the game code sees an ordinary user. */
+export async function createGuestUser(name: string): Promise<User> {
+  const clean = name.trim().replace(/\s+/g, " ").slice(0, 40) || "Guest";
+  const user = await prisma.user.create({
+    data: { email: `guest-${randomBytes(8).toString("hex")}@${GUEST_DOMAIN}`, name: clean, passwordHash: await hashPassword(randomBytes(24).toString("hex")), ageVerifiedAt: new Date(), marketingOptIn: false },
+  });
+  await createSession(user.id, user.passwordHash);
+  return user;
 }
 
 export const asState = (j: unknown): GameState => j as GameState;

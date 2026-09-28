@@ -20,7 +20,7 @@ export interface SeoDefaults {
 /* Anything under these prefixes is private: never indexed, never in the
    sitemap, disallowed in robots.txt, whatever the page or the Admin → SEO
    override says. */
-export const PRIVATE_PREFIXES = ["/admin", "/api", "/account", "/checkout", "/cart", "/play", "/login", "/signup", "/forgot", "/reset"];
+export const PRIVATE_PREFIXES = ["/admin", "/api", "/account", "/checkout", "/cart", "/play", "/join", "/login", "/signup", "/forgot", "/reset"];
 export const isPrivatePath = (path: string) => PRIVATE_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
 
 const DEFAULT_DESCRIPTION = "72 cards, one 12-sided die, and a better night than the one you were planning. An adult card game for couples, written by a practicing sex therapist.";

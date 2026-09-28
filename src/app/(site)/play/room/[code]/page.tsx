@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
-import { hasOnlineAccess } from "@/lib/packs";
 import { publicState } from "@/lib/game";
 import { asState, isParticipant, joinRoom } from "@/app/api/play/_shared";
 import Room from "@/components/play/Room";
@@ -14,8 +13,7 @@ export default async function RoomPage({ params }: { params: Promise<{ code: str
   const { code: raw } = await params;
   const code = raw.toUpperCase();
   const user = await getSessionUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(`/play/room/${code}`)}`);
-  if (!(await hasOnlineAccess(user.id))) redirect("/play");
+  if (!user) redirect(`/join/${code}`);
 
   let room = await prisma.gameRoom.findUnique({ where: { code } });
   if (!room) notFound();

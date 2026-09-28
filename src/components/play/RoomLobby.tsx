@@ -31,7 +31,8 @@ export default function RoomLobby({ code, state, me, isHost, act }: {
   }
 
   async function copy() {
-    try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1600); }
+    const invite = `Join me on Play Time: ${window.location.origin}/join/${code}\nRoom code: ${code}`;
+    try { await navigator.clipboard.writeText(invite); setCopied(true); setTimeout(() => setCopied(false), 1600); }
     catch { /* clipboard blocked */ }
   }
 
@@ -49,9 +50,9 @@ export default function RoomLobby({ code, state, me, isHost, act }: {
         <div className="eyebrow" style={{ color: "var(--primary)" }}>Share this code with your partner</div>
         <div className="row" style={{ gap: 20 }}>
           <div className="roomcode t-h2">{code}</div>
-          <button className="btn btn--sm" onClick={copy}>{copied ? "Copied" : "Copy code"}</button>
+          <button className="btn btn--sm" onClick={copy}>{copied ? "Copied" : "Copy invite"}</button>
         </div>
-        <p className="t-body-sm">They go to <span className="mono">/play</span>, choose “Join with a code”, and type it in. Set your ceiling and vetoes while you wait.</p>
+        <p className="t-body-sm">Copy the invite and send it however you like. It carries a link straight to the room, <span className="mono">playtimetcg.com/join/{code}</span>. Your partner doesn’t need an account or a subscription: they enter a name and they’re in. Set your ceiling and vetoes while you wait.</p>
       </div>
 
       {me && (
