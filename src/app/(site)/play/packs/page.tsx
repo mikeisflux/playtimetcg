@@ -10,6 +10,7 @@ import { listPacks } from "@/app/api/play/_shared";
 import AddToCart from "@/components/AddToCart";
 import PlayTabs from "@/components/play/PlayTabs";
 import PackOpener from "@/components/play/PackOpener";
+import AdminTestPanel from "@/components/play/AdminTestPanel";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata("/play/packs", {
@@ -26,6 +27,21 @@ export default async function PacksPage() {
     user && access ? listPacks(user.id) : Promise.resolve([]),
     prisma.product.findMany({ where: { kind: "digital_pack", active: true }, orderBy: [{ sortIndex: "asc" }, { createdAt: "asc" }] }).catch(() => []),
   ]);
+  /* admin testing panel data: per-set ownership */
+  let adminSets: { id: string; name: string; slug: string; owned: number; unopened: number }[] = [];
+  if (user?.isAdmin) {
+    const [sets, owned, unopened] = await Promise.all([
+      prisma.cardSet.findMany({ orderBy: { sortIndex: "asc" } }),
+      prisma.userCard.groupBy({ by: ["cardId"], where: { userId: user.id }, _sum: { qty: true } }).then(async (rows) => {
+        const cards = await prisma.card.findMany({ where: { id: { in: rows.map((r) => r.cardId) } }, select: { id: true, setId: true } });
+        const bySet: Record<string, number> = {};
+        for (const r of rows) { const c = cards.find((x) => x.id === r.cardId); if (c) bySet[c.setId] = (bySet[c.setId] ?? 0) + (r._sum.qty ?? 0); }
+        return bySet;
+      }),
+      prisma.userPack.groupBy({ by: ["setId"], where: { userId: user.id }, _sum: { qty: true } }),
+    ]);
+    adminSets = sets.map((s) => ({ id: s.id, name: s.name, slug: s.slug, owned: owned[s.id] ?? 0, unopened: unopened.find((u) => u.setId === s.id)?._sum.qty ?? 0 }));
+  }
 
   return (
     <div className="wrap section--tight" style={{ paddingTop: 32 }}>
@@ -36,7 +52,10 @@ export default async function PacksPage() {
       </div>
 
       {user && access ? (
-        <PackOpener initial={packs} />
+        <>
+          <PackOpener initial={packs} />
+          {user.isAdmin && <AdminTestPanel products={products.map((p) => ({ id: p.id, name: p.name, accent: p.accent, setId: p.cardSetId }))} sets={adminSets} />}
+        </>
       ) : (
         <div className="empty">
           <div className="t-item">Packs need online play.</div>

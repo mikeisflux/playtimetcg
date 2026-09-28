@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
-import { createOrder, startCheckout, payWithCredits, type ShippingInput } from "@/lib/orders";
+import { createOrder, startCheckout, type ShippingInput } from "@/lib/orders";
 import { prisma } from "@/lib/db";
-import { siteUrl } from "@/lib/settings";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -27,11 +26,6 @@ export async function POST(req: Request) {
     if (user && shipping) {
       const existing = await prisma.address.findFirst({ where: { userId: user.id, line1: shipping.line1, postal: shipping.postal } });
       if (!existing) await prisma.address.create({ data: { userId: user.id, ...shipping, line2: shipping.line2 ?? null, phone: shipping.phone ?? null, isDefault: true } });
-    }
-    if (body.method === "credits") {
-      if (!user) return NextResponse.json({ error: "Sign in to pay with credits." }, { status: 401 });
-      await payWithCredits(order.id, user.id);
-      return NextResponse.json({ ok: true, url: `${await siteUrl()}/checkout/success?order=${order.id}` });
     }
     const { url, sessionId } = await startCheckout(order.id, { embed: body.embed !== false });
     return NextResponse.json({ ok: true, url, orderId: order.id, sessionId, embed: body.embed !== false && !!sessionId });

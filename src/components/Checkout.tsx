@@ -6,12 +6,12 @@ import { money } from "@/lib/content";
 import DivinityCheckoutFrame from "./DivinityCheckoutFrame";
 
 interface Quote { subtotalCents: number; shippingCents: number; taxCents: number; totalCents: number; needsShipping: boolean; problems: string[] }
-interface Me { id: string; email: string; name: string; creditsAvailable: number | null; address: Record<string, string> | null }
+interface Me { id: string; email: string; name: string; address: Record<string, string> | null }
 
-export default function Checkout({ me, allowCredits, discreet }: { me: Me | null; allowCredits: boolean; discreet: boolean }) {
+export default function Checkout({ me, discreet }: { me: Me | null; discreet: boolean }) {
   const { lines } = useCart();
   const [quote, setQuote] = useState<Quote | null>(null);
-  const [busy, setBusy] = useState<"" | "divinity" | "credits">("");
+  const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [embed, setEmbed] = useState<{ url: string; sessionId: string; orderId: string } | null>(null);
   const payload = lines.map((l) => ({ id: l.id, qty: l.qty, choices: l.choices }));
@@ -29,9 +29,9 @@ export default function Checkout({ me, allowCredits, discreet }: { me: Me | null
     return <div className="empty"><div className="t-item-md">Your cart is empty</div><Link className="btn" href="/shop" style={{ alignSelf: "flex-start" }}>Go to the shop</Link></div>;
   }
 
-  async function submit(e: React.FormEvent<HTMLFormElement>, method: "divinity" | "credits") {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setErr(""); setBusy(method);
+    setErr(""); setBusy(true);
     const f = new FormData(e.currentTarget);
     const body = {
       lines: payload,
@@ -40,15 +40,14 @@ export default function Checkout({ me, allowCredits, discreet }: { me: Me | null
         name: f.get("name"), line1: f.get("line1"), line2: f.get("line2"), city: f.get("city"), region: f.get("region"), postal: f.get("postal"), country: f.get("country") || "US", phone: f.get("phone"),
       } : null,
       notes: f.get("notes"), discreet: discreet,
-      method,
     };
     const res = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) { setErr(data.error || "Checkout failed."); setBusy(""); return; }
+    if (!res.ok) { setErr(data.error || "Checkout failed."); setBusy(false); return; }
     if (data.embed && data.sessionId && data.orderId) {
-      /* DivinityCoin's checkout opens inside this page; the cart is cleared once it confirms */
+      /* the card form opens inside this page; the cart is cleared once payment confirms */
       setEmbed({ url: data.url, sessionId: data.sessionId, orderId: data.orderId });
-      setBusy("");
+      setBusy(false);
       return;
     }
     cart.clear();
@@ -59,7 +58,7 @@ export default function Checkout({ me, allowCredits, discreet }: { me: Me | null
     return (
       <div className="grid g-420" style={{ gap: "clamp(32px, 5vw, 72px)", alignItems: "start" }}>
         <div className="stack gap-16">
-          <div className="t-item">Pay with DivinityCoin</div>
+          <div className="t-item">Pay by card</div>
           <DivinityCheckoutFrame checkoutUrl={embed.url} sessionId={embed.sessionId} confirmPath="/api/checkout/confirm" confirmBody={{ orderId: embed.orderId }} onCancel={() => setEmbed(null)} />
         </div>
         <Summary lines={lines} quote={quote} />
@@ -68,10 +67,9 @@ export default function Checkout({ me, allowCredits, discreet }: { me: Me | null
   }
 
   const a = me?.address ?? {};
-  const canCredits = allowCredits && me && me.creditsAvailable !== null && quote && me.creditsAvailable * 100 >= quote.totalCents;
 
   return (
-    <form className="grid g-420" style={{ gap: "clamp(32px, 5vw, 72px)", alignItems: "start" }} onSubmit={(e) => submit(e, "divinity")}>
+    <form className="grid g-420" style={{ gap: "clamp(32px, 5vw, 72px)", alignItems: "start" }} onSubmit={submit}>
       <div className="stack gap-28">
         <div className="stack gap-16">
           <div className="t-item">Contact</div>
@@ -105,14 +103,8 @@ export default function Checkout({ me, allowCredits, discreet }: { me: Me | null
 
       <Summary lines={lines} quote={quote}>
         {err && <div className="note note--err" role="alert">{err}</div>}
-        <button className="btn" disabled={!!busy || !quote || quote.problems.length > 0}>{busy === "divinity" ? "Opening secure checkout…" : "Pay with DivinityCoin"}</button>
-        {me && allowCredits && me.creditsAvailable !== null && (
-          <button type="button" className="btn btn--outline" disabled={!!busy || !canCredits}
-            onClick={(e) => { const form = (e.currentTarget as HTMLButtonElement).form!; if (!form.reportValidity()) return; submit({ preventDefault() {}, currentTarget: form } as unknown as React.FormEvent<HTMLFormElement>, "credits"); }}>
-            {busy === "credits" ? "Paying…" : `Pay with credits (${money(Math.round(me.creditsAvailable * 100))} available)`}
-          </button>
-        )}
-        <div className="note">Payment opens right here on this page, handled by DivinityCoin. We never see your card details.</div>
+        <button className="btn" disabled={busy || !quote || quote.problems.length > 0}>{busy ? "Opening secure checkout…" : "Continue to payment"}</button>
+        <div className="note">Pay by card right here on this page. We never see or store your card details.</div>
       </Summary>
     </form>
   );

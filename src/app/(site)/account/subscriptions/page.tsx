@@ -37,7 +37,7 @@ export default async function Subscriptions({ searchParams }: { searchParams: Pr
               </div>
               <div className="t-body-sm">{money(s.priceCents)} / {s.interval}
                 {s.currentPeriodEnd && s.status === "active" ? ` · ${s.cancelAtPeriodEnd ? "ends" : "renews"} ${s.currentPeriodEnd.toLocaleDateString("en-US", { dateStyle: "medium" })}` : ""}
-                {s.status === "past_due" ? " · last payment failed — update your payment method on DivinityCoin" : ""}
+                {s.status === "past_due" ? " · last payment failed — we’ll retry your card daily for a week" : ""}
               </div>
               {["active", "past_due", "pending"].includes(s.status) && <SubscriptionActions id={s.id} status={s.status} cancelAtPeriodEnd={s.cancelAtPeriodEnd} />}
               {s.invoices.length > 0 && (

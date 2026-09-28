@@ -14,6 +14,13 @@ export default function PackOpener({ initial }: { initial: PackItem[] }) {
   const [err, setErr] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  /* the admin testing panel grants/removes packs: reload the list when it says so */
+  useEffect(() => {
+    const on = () => { void refresh(); setStage({ kind: "list" }); };
+    window.addEventListener("pt:packs-changed", on);
+    return () => window.removeEventListener("pt:packs-changed", on);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function refresh() {
     try { const r = await api<{ packs: PackItem[] }>("/api/play/packs"); setPacks(r.packs); } catch { /* keep what we have */ }

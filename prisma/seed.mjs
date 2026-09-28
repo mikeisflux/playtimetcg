@@ -210,7 +210,7 @@ const defaults = {
   AGE_GATE_LEAVE_URL: "https://www.google.com", INTRO_VIDEO_ENABLED: "true", DISCREET_PACKAGING: "true",
   STORE_CURRENCY: "USD", SHIPPING_FLAT_CENTS: "600", SHIPPING_FREE_OVER_CENTS: "7500", TAX_RATE_PERCENT: "0",
   ONLINE_PLAY_ENABLED: "true", STARTER_SET_SLUG: "base", PACK_RARITY_WEIGHTS: "common:70,uncommon:25,rare:5", PACK_GUARANTEE_UNCOMMON: "true",
-  DIVINITYCOIN_API_URL: "https://divinitycoin.com", DIVINITYCOIN_PARTNER_SLUG: "playtimetcg", DIVINITYCOIN_ALLOW_CREDITS: "true", DIVINITYCOIN_TEST_MODE: "false",
+  DIVINITYCOIN_API_URL: "https://divinitycoin.com", DIVINITYCOIN_PARTNER_SLUG: "playtimetcg", DIVINITYCOIN_TEST_MODE: "false",
   MAIL_FROM_NAME: "Play Time", SENDGRID_TRACKING: "true",
   SEO_TITLE_TEMPLATE: "%s | Play Time", SEO_DEFAULT_TITLE: "Play Time — The Card Game for Couples (18+)",
   SEO_DEFAULT_DESCRIPTION: "72 cards, one 12-sided die, and a better night than the one you were planning. An adult card game for couples, written by a practicing sex therapist.",

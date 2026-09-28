@@ -18,7 +18,7 @@ export default function ProductBuy({ product, expansions, user }: { product: Pub
     return (
       <div className="stack gap-16">
         <div className="price" style={{ fontSize: 32 }}>{money(product.priceCents)} <span className="label">/ {product.subInterval || "month"}</span></div>
-        <div className="note">Billed through DivinityCoin. Cancel anytime from your account.</div>
+        <div className="note">Billed to your card each period. Cancel anytime from your account.</div>
         {err && <div className="note note--err">{err}</div>}
         <button className="btn" disabled={busy} onClick={async () => {
           if (!user) { router.push(`/login?next=${encodeURIComponent(`/shop/${product.slug}`)}`); return; }

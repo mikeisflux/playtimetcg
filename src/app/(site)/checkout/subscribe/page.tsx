@@ -23,7 +23,7 @@ export default async function Subscribe({ searchParams }: { searchParams: Promis
         <h1 className="t-h2">{p.name}</h1>
         <div className="price" style={{ fontSize: 32 }}>{money(p.priceCents)} <span className="label">/ {p.subInterval || "month"}</span></div>
         <p className="t-lead">{p.description}</p>
-        <p className="note">Billed through DivinityCoin every {p.subInterval || "month"}. Cancel anytime from your account; the current period runs out, no partial refunds.</p>
+        <p className="note">Billed to your card every {p.subInterval || "month"}. Cancel anytime from your account; the current period runs out, no partial refunds.</p>
       </div>
       <SubscribeForm productId={p.id} needsShipping={p.subPlan === "monthly_cards"} address={addr ? { name: addr.name, line1: addr.line1, line2: addr.line2 ?? "", city: addr.city, region: addr.region, postal: addr.postal, country: addr.country, phone: addr.phone ?? "" } : { name: user.name }} />
     </section>

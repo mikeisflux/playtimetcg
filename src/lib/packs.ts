@@ -109,7 +109,15 @@ export async function openPack(userId: string, packId: string) {
   return { set: pack.set, cards: opened };
 }
 
+/* Admins always have online play (for testing) and get the base deck the
+   first time they visit. Everyone else needs an online_play subscription. */
 export async function hasOnlineAccess(userId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
+  if (user?.isAdmin) {
+    const owned = await prisma.userCard.count({ where: { userId } });
+    if (owned === 0) await grantStarterDeck(userId);
+    return true;
+  }
   const sub = await prisma.subscription.findFirst({
     where: { userId, plan: "online_play", status: { in: ["active", "past_due"] } },
     orderBy: { startedAt: "desc" },

@@ -20,7 +20,7 @@ export default function SubscribeForm({ productId, needsShipping, address }: { p
   if (embed) {
     return (
       <div className="stack gap-16">
-        <div className="t-item">Save a card with DivinityCoin</div>
+        <div className="t-item">Save your card</div>
         <DivinityCheckoutFrame checkoutUrl={embed.url} sessionId={embed.sessionId} confirmPath="/api/subscriptions/confirm" confirmBody={{ subscriptionId: embed.subscriptionId }} title="Save your card" onCancel={() => setEmbed(null)} />
       </div>
     );

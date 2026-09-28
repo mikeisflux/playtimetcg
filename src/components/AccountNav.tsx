@@ -3,7 +3,7 @@ import SignOutLink from "./SignOutLink";
 
 const TABS = [
   ["/account", "Overview"], ["/account/orders", "Orders"], ["/account/subscriptions", "Subscriptions"],
-  ["/account/credits", "DivinityCoin credits"], ["/play/collection", "Collection"], ["/account/settings", "Settings"],
+  ["/play/collection", "Collection"], ["/account/settings", "Settings"],
 ] as const;
 
 export default function AccountNav({ current, name }: { current: string; name: string }) {

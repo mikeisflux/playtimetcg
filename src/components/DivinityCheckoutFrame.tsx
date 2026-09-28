@@ -99,14 +99,14 @@ export default function DivinityCheckoutFrame({ checkoutUrl, sessionId, confirmP
             {slow && !ready && (
               <div className="stack gap-12" style={{ alignItems: "flex-start" }}>
                 <div className="t-body-sm">Taking a while? Your browser may be blocking the embedded checkout.</div>
-                <button type="button" className="btn btn--sm" onClick={() => void reopen()}>Open DivinityCoin checkout in this tab</button>
+                <button type="button" className="btn btn--sm" onClick={() => void reopen()}>Open the secure checkout in this tab</button>
               </div>
             )}
           </div>
         )}
         <iframe src={checkoutUrl} title={title} allow="payment *; publickey-credentials-get *" style={{ width: "100%", height: "100%", border: 0, display: "block" }} />
       </div>
-      <div className="note">Payment is handled by DivinityCoin inside this page. We never see your card details.</div>
+      <div className="note">Secure card payment. We never see or store your card details.</div>
     </div>
   );
 }

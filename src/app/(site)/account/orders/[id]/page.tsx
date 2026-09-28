@@ -57,7 +57,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           )}
           <div className="panel panel--surface">
             <div className="t-item-sm">Payment</div>
-            <div className="t-body-sm">{o.paymentMethod === "divinitycoin_credits" ? "DivinityCoin credits" : o.paymentMethod === "comp" ? "Complimentary" : "DivinityCoin"}{o.paidAt ? ` · paid ${o.paidAt.toLocaleDateString("en-US", { dateStyle: "medium" })}` : ""}</div>
+            <div className="t-body-sm">{o.paymentMethod === "comp" ? "Complimentary" : "Card"}{o.paidAt ? ` · paid ${o.paidAt.toLocaleDateString("en-US", { dateStyle: "medium" })}` : ""}</div>
             {o.paymentRef && <div className="note mono">Ref {o.paymentRef}</div>}
           </div>
           <div className="note">Need help with this order? <Link href={`/contact?order=${o.number}`}>Contact us</Link>.</div>
