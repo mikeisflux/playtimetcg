@@ -1,0 +1,58 @@
+{
+  "_note": "Owner-supplied expansion pack copy. Seeded into Product.tag / description / includes (only when the product has no description yet, so Admin → Products edits persist). Range line is used on /expansions.",
+  "range": {
+    "headline": "New nights. Same partner. More reasons to roll the die.",
+    "body": "Six expansions, twelve cards each. Shuffle one into the base deck, or play a single pack on its own for a themed night."
+  },
+  "packs": {
+    "date-night": {
+      "tagline": "Turn the evening out into the main event.",
+      "front": "Dinner is just the opening act.",
+      "heat": "Heat 1–4", "rarities": "6 Common / 4 Uncommon / 2 Rare",
+      "box": "Dinner. Drinks. A movie. Then what? Most date nights fade out once you get home. This pack keeps the evening building instead — from the first look across the table, through the ride home, to the moment the door closes. Dress-code rules, dessert-first detours and a slow dance nobody else gets to see. Friday night, sorted.",
+      "web": "Twelve cards written for the whole evening, not just the end of it. Some play out while you're still at dinner, quietly and just for the two of you. Some happen on the way home. The rest wait for the door to close. It's the gentlest pack in the range, and the easiest one to bring to a first game night.",
+      "try": ["Dress Code", "Order for Me", "Dessert First"]
+    },
+    "weekend": {
+      "tagline": "Hotel keys. Do Not Disturb. Zero interruptions.",
+      "front": "You're already paying for the room.",
+      "heat": "Heat 2–5", "rarities": "5 Common / 4 Uncommon / 3 Rare",
+      "box": "A hotel room changes the rules. Nobody knows where you are, nobody needs anything from you, and checkout isn't until tomorrow. These cards are built for that feeling — from the click of the door to one more hour in bed. Shower for two, the mini-bar dare, and a Do Not Disturb sign you'll mean. Make the stay the reason you went.",
+      "web": "Twelve cards for a weekend away. They use the whole room: the shower, the balcony, room service and the late checkout. It runs hotter than the base set, and three Rares make it the best pack for collectors. Pack it for anniversaries, birthdays, or any weekend when the goal is to not leave the room.",
+      "try": ["Unpack Later", "Do Not Disturb", "Late Checkout"]
+    },
+    "long-term": {
+      "tagline": "You know every move. Time to make some new ones.",
+      "front": "Comfort is great. Predictable isn't.",
+      "heat": "Heat 1–4", "rarities": "6 Common / 4 Uncommon / 2 Rare",
+      "box": "You love each other. You also know exactly how Saturday night goes. This pack is for couples who want the history and the spark — revisit your firsts, ban your usual routine for one night, switch who starts things, or finally try the thing you've both been thinking about for years. Same partner. New night.",
+      "web": "Twelve cards that build on what you already know about each other. They don't pretend you're strangers. This is the most emotionally focused pack in the range: appreciation, memory, going back to firsts, plus two Rares that turn a long-held \"someday\" into tonight. It's the one we point long-term couples to first.",
+      "try": ["No Routine Allowed", "Switch Initiator", "Bucket List Item"]
+    },
+    "quick": {
+      "tagline": "Five to fifteen minutes. Still counts.",
+      "front": "Small window. Taking it.",
+      "heat": "Heat 3–5", "rarities": "7 Common / 4 Uncommon / 1 Rare",
+      "box": "No warm-up. No setup. No marathon. Just fast, focused cards for busy weeks, early mornings and the gap before someone has to leave. Clothes stay mostly on, timers get set, and one song is exactly long enough. Every card here runs fifteen minutes or less. Maximum heat. Minimum time.",
+      "web": "Twelve cards and none of them takes longer than fifteen minutes. It starts at Heat 3, which makes it the most intense pack, but also the most practical. Keep it by the bed for the weeks when a whole evening isn't happening. The short time limits make it fun in a different way: the clock is part of the game.",
+      "try": ["One Song", "Clothes On", "Timer Edge"]
+    },
+    "toy": {
+      "tagline": "Add one more tool to the night.",
+      "front": "One toy. A whole new game.",
+      "heat": "Heat 2–4", "rarities": "4 Common / 5 Uncommon / 3 Rare",
+      "needs": "One vibrator, wand or couple's toy (not included)",
+      "box": "You don't need a drawer full of gadgets. One simple toy is enough to change the whole night — if you know what to do with it. These cards make bringing it in feel natural instead of awkward: shared control, blindfold combinations, a slow tease, and a night built around trying something new. Simple toys. Better nights.",
+      "web": "Twelve cards that work with the toy you already have. It's for couples who are curious about toys and couples who already have a favorite. Every card works with a vibrator, a wand or a couple's toy, and none needs special equipment. It has the most Uncommon and Rare cards of any pack, and it's the pack most likely to change how your base deck plays. Toy not included.",
+      "try": ["Toy Tease", "Shared Control", "Blindfold Plus Toy"]
+    },
+    "travel": {
+      "tagline": "New city. New room. Different rules.",
+      "front": "Pack light. Play hard.",
+      "heat": "Heat 2–5", "rarities": "5 Common / 4 Uncommon / 3 Rare",
+      "box": "Airports, rental cars, time zones, strange hotel windows — travel puts you both slightly off balance, and that's the point. These cards are written for life on the move: a suitcase that stays packed a little longer, a souvenir that isn't for anyone else, and jet-lag mornings with nowhere to be. Take the spark with you.",
+      "web": "Twelve cards for road trips, flights and wherever you end up. Most of them play out privately once you arrive. A few add some quiet tension on the way there. It's small enough to go in a carry-on, and it's the obvious gift for a honeymoon or a first trip together.",
+      "try": ["Packing Delay", "Time Zone Jet Lag", "Local Flavor"]
+    }
+  }
+}

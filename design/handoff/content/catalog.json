@@ -34,10 +34,10 @@
   ],
   "expansions": [
     { "id": "date-night", "name": "Date Night",        "price": 14, "cards": 12, "accent": "#5AB8F0", "hook": "Turn the evening out into the main event." },
-    { "id": "weekend",    "name": "Weekend Getaway",   "price": 14, "cards": 12, "accent": "#A68CF5", "hook": "Hotel keys, do not disturb, zero interruptions." },
+    { "id": "weekend",    "name": "Weekend Getaway",   "price": 14, "cards": 12, "accent": "#A68CF5", "hook": "Hotel keys. Do Not Disturb. Zero interruptions." },
     { "id": "long-term",  "name": "Long-Term Couples", "price": 14, "cards": 12, "accent": "#3FD6C8", "hook": "You know every move. Time to make some new ones." },
     { "id": "quick",      "name": "Quick & Dirty",     "price": 14, "cards": 12, "accent": "#FF5C8A", "hook": "Five to fifteen minutes. Still counts." },
     { "id": "toy",        "name": "Toy-Friendly",      "price": 14, "cards": 12, "accent": "#E86BD8", "hook": "Add one more tool to the night." },
-    { "id": "travel",     "name": "Travel",            "price": 14, "cards": 12, "accent": "#FF6A3D", "hook": "New city, new room, different rules." }
+    { "id": "travel",     "name": "Travel",            "price": 14, "cards": 12, "accent": "#FF6A3D", "hook": "New city. New room. Different rules." }
   ]
 }

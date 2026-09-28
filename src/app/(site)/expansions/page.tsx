@@ -32,8 +32,8 @@ export default async function Expansions() {
       <section id="top" className="wrap" style={{ paddingBlock: "clamp(48px, 8vw, 104px) clamp(40px, 6vw, 72px)" }} data-screen-label="Expansions header">
         <div className="stack gap-12" style={{ maxWidth: 760 }}>
           <div className="eyebrow" style={{ color: "#5AB8F0" }}>Expansions</div>
-          <h1 className="t-h2">Six packs. Twelve cards each.</h1>
-          <p className="t-lead" style={{ marginTop: 8 }}>Shuffle them into the base deck, or play one on its own for a themed night.</p>
+          <h1 className="t-h2">New nights. Same partner.<br />More reasons to roll the die.</h1>
+          <p className="t-lead" style={{ marginTop: 8 }}>Six expansions, twelve cards each. Shuffle one into the base deck, or play a single pack on its own for a themed night.</p>
         </div>
       </section>
 

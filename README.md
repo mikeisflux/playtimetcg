@@ -57,7 +57,7 @@ Webhook at `/api/webhooks/sendgrid/events?key=<SENDGRID_EVENT_KEY>`.
 ## Owner to-dos (from the design handoff)
 
 1. Confirm the expansion pack price (seeded at the $14 placeholder).
-2. Write Privacy, Terms, Shipping, Returns in Admin → Pages.
+2. Privacy, Terms, Shipping and Returns are seeded from `prisma/pages/*.html` (edit in Admin → Pages). Fill in the bracketed company address and governing-law state, and have a lawyer review before launch.
 3. Upload product photos for the four image slots and the intro video (Admin → Settings / Products).
 4. Card copy: all 144 cards are seeded with their real set, category, rarity, spice and time from the print PDF (`design/cards/cards-meta.json`). Titles and instructions are printed in the artwork; enter them in Admin → Cards or via CSV import.
 5. Card artwork: put `Play Time Cards Print.pdf` in `docs/` and run `npm run cards:import` (the deploy script does this automatically). Cards render as full artwork in the online game, served only to players who own them via `/api/cards/art/<code>`; nothing is published on the open web.

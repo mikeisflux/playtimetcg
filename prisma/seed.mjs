@@ -124,12 +124,21 @@ for (const p of catalog.products) {
     },
   });
 }
+const expCopy = JSON.parse(readFileSync(new URL("../design/handoff/content/expansions.json", import.meta.url), "utf8")).packs;
 for (const e of catalog.expansions) {
-  await prisma.product.upsert({
-    where: { slug: e.id },
-    update: {},
-    create: { slug: e.id, kind: "expansion", name: e.name, tag: e.hook, priceCents: Math.round(e.price * 100), accent: e.accent, includes: ["12 cards", "Shuffles into the base deck"], cardSetId: sets[e.id]?.id, sortIndex: sort++ },
-  });
+  const c = expCopy[e.id] ?? {};
+  const copy = {
+    tag: c.tagline ?? e.hook,
+    description: c.web ?? null,
+    includes: ["12 cards", c.heat, c.rarities, c.needs ?? "Shuffles into the base deck"].filter(Boolean),
+  };
+  const existing = await prisma.product.findUnique({ where: { slug: e.id }, select: { id: true, description: true } });
+  if (!existing) {
+    await prisma.product.create({ data: { slug: e.id, kind: "expansion", name: e.name, priceCents: Math.round(e.price * 100), accent: e.accent, cardSetId: sets[e.id]?.id, sortIndex: sort++, ...copy } });
+  } else if (!existing.description) {
+    // Owner copy lands once; edits made in Admin → Products afterwards are kept.
+    await prisma.product.update({ where: { id: existing.id }, data: copy });
+  } else sort++;
 }
 /* online play + digital + subscriptions */
 await prisma.product.upsert({
@@ -148,6 +157,21 @@ for (const slug of ["date-night", "weekend", "long-term", "quick", "toy", "trave
   });
 }
 console.log("✔ Products ensured (3 sets, 6 expansions, 2 subscriptions, 6 digital packs).");
+
+/* ───── legal & help pages (created only when missing; edit in Admin → Pages) ───── */
+const PAGES = [
+  { slug: "privacy", title: "Privacy Policy" }, { slug: "terms", title: "Terms of Service" },
+  { slug: "shipping", title: "Shipping" }, { slug: "returns", title: "Returns" },
+];
+let pagesCreated = 0;
+for (const pg of PAGES) {
+  const exists = await prisma.page.findUnique({ where: { slug: pg.slug } });
+  if (exists) continue;
+  const html = readFileSync(new URL(`./pages/${pg.slug}.html`, import.meta.url), "utf8");
+  await prisma.page.create({ data: { slug: pg.slug, title: pg.title, html, published: true } });
+  pagesCreated++;
+}
+console.log(`✔ Pages ensured (${pagesCreated} created).`);
 
 /* ───── settings defaults (only when unset) ───── */
 const defaults = {
