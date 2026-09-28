@@ -118,6 +118,33 @@ CADDY
   fi
 }
 
+# Small servers (2 GB) get OOM-killed by `next build`. Give them swap and a
+# capped Node heap; ecosystem.config.js also drops to one worker under 3 GB.
+ensure_swap() {
+  [ "$(id -u)" -eq 0 ] || return 0
+  local ram_mb swap_mb
+  ram_mb=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
+  swap_mb=$(awk '/SwapTotal/ {print int($2/1024)}' /proc/meminfo)
+  if [ "$ram_mb" -lt 4000 ] && [ "$swap_mb" -lt 1000 ]; then
+    log "Only ${ram_mb} MB RAM and no swap — creating a 3 GB swap file…"
+    if ! [ -f /swapfile ]; then
+      fallocate -l 3G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=3072 status=none
+      chmod 600 /swapfile && mkswap /swapfile >/dev/null
+    fi
+    swapon /swapfile 2>/dev/null || true
+    grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    sysctl -q vm.swappiness=10 && grep -q '^vm.swappiness' /etc/sysctl.conf || echo 'vm.swappiness=10' >> /etc/sysctl.conf
+  fi
+}
+
+build_heap_mb() {
+  local ram_mb; ram_mb=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
+  local heap=$(( ram_mb * 6 / 10 ))
+  [ "$heap" -lt 1024 ] && heap=1024
+  [ "$heap" -gt 4096 ] && heap=4096
+  echo "$heap"
+}
+
 pull_code() {
   cd "$APP_DIR"
   log "Pulling latest ${BRANCH}…"
@@ -147,13 +174,15 @@ build_app() {
     log "Rendering card artwork from docs/Play Time Cards Print.pdf…"
     npm run cards:import || log "⚠ card artwork import failed — the game falls back to text cards"
   fi
-  log "Building (next build)…"
+  log "Building (next build, heap $(build_heap_mb) MB)…"
+  export NODE_OPTIONS="--max-old-space-size=$(build_heap_mb)"
   NEXT_PUBLIC_PT_BUILD="$(date -u +%Y-%m-%d).$(git rev-parse --short=10 HEAD 2>/dev/null || date +%s)"
   export NEXT_PUBLIC_PT_BUILD
   rm -rf .next-build
   NEXT_DIST_DIR=.next-build npx next build
   # atomic-ish swap: the live workers keep the old .next until reload
   rm -rf .next-prev; [ -d .next ] && mv .next .next-prev; mv .next-build .next
+  unset NODE_OPTIONS
   mkdir -p public/uploads
 }
 
@@ -163,7 +192,7 @@ case "$cmd" in
     [ "$(id -u)" -eq 0 ] || fail "setup needs root (sudo)."
     apt-get update -qq >/dev/null
     apt-get install -y -qq git curl ca-certificates gnupg >/dev/null
-    ensure_node; ensure_pm2
+    ensure_node; ensure_pm2; ensure_swap
     if [ ! -d "$APP_DIR/.git" ]; then
       log "Cloning ${REPO_URL} (${BRANCH}) into ${APP_DIR}…"
       git clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
@@ -187,7 +216,7 @@ case "$cmd" in
     ;;
   deploy)
     cd "$APP_DIR" || fail "APP_DIR ${APP_DIR} not found — run setup first."
-    ensure_node; ensure_pm2; load_env
+    ensure_node; ensure_pm2; ensure_swap; load_env
     pull_code
     build_app
     if pm2 describe "$SERVICE" >/dev/null 2>&1; then

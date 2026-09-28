@@ -5,6 +5,7 @@
 // bind the port, then drains the old ones.
 
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 
 // Read APP_DIR/.env so the workers always get DATABASE_URL even when
@@ -25,6 +26,8 @@ function loadEnvFile(file) {
 
 const fileEnv = loadEnvFile(path.join(__dirname, ".env"));
 const PORT = process.env.PORT || fileEnv.PORT || "3000";
+// One worker on small servers (< 3 GB RAM) so a rebuild has room; two otherwise.
+const INSTANCES = Number(process.env.PM2_INSTANCES || fileEnv.PM2_INSTANCES) || (os.totalmem() < 3 * 1024 ** 3 ? 1 : 2);
 const DATABASE_URL = process.env.DATABASE_URL || fileEnv.DATABASE_URL || "";
 
 module.exports = {
@@ -36,11 +39,11 @@ module.exports = {
       // 80/443 open); Caddy proxies to localhost.
       args: `start -p ${PORT}`,
       cwd: __dirname,
-      instances: 2,
+      instances: INSTANCES,
       exec_mode: "cluster",
       listen_timeout: 10000,
       kill_timeout: 5000,
-      max_memory_restart: "600M",
+      max_memory_restart: os.totalmem() < 3 * 1024 ** 3 ? "450M" : "600M",
       env: {
         NODE_ENV: "production",
         PORT,
