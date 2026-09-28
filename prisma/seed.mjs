@@ -154,6 +154,13 @@ await prisma.product.upsert({
     imageSlot: "site-prod-playkit", sortIndex: sort++,
   },
 });
+/* Product photos committed under public/products/<slug>.jpg — applied once
+   (a photo uploaded later in Admin → Products wins). */
+for (const slug of ["base", "bundle", "collector", "playkit"]) {
+  if (existsSync(new URL(`../public/products/${slug}.jpg`, import.meta.url))) {
+    await prisma.product.updateMany({ where: { slug, imageUrl: null }, data: { imageUrl: `/products/${slug}.jpg` } });
+  }
+}
 /* online play + digital + subscriptions */
 await prisma.product.upsert({
   where: { slug: "online-play" }, update: {},
