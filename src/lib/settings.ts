@@ -38,7 +38,8 @@ export const SETTING_KEYS: SettingDef[] = [
 
   // DivinityCoin
   { key: "DIVINITYCOIN_API_URL", label: "DivinityCoin API base URL", group: "DivinityCoin", hint: "https://divinitycoin.com (default) — or the VPN address http://10.10.0.1:3001 if this server is on DivinityCoin's VPN" },
-  { key: "DIVINITYCOIN_API_KEY", label: "DivinityCoin partner API key", group: "DivinityCoin", secret: true, hint: "sent as X-Internal-Key on every server-to-server call" },
+  { key: "DIVINITYCOIN_API_KEY", label: "DivinityCoin partner API key", group: "DivinityCoin", secret: true, hint: "sk_… from the partner page; sent in the auth header below on every server-to-server call" },
+  { key: "DIVINITYCOIN_AUTH_HEADER", label: "API key header name", group: "DivinityCoin", hint: "X-API-Key (public partner API, default) — X-Internal-Key on the VPN service" },
   { key: "DIVINITYCOIN_PUBLIC_KEY", label: "DivinityCoin public (publishable) key", group: "DivinityCoin", hint: "if DivinityCoin issues one — identifies the partner in hosted checkout" },
   { key: "DIVINITYCOIN_PARTNER_SLUG", label: "Partner slug registered on DivinityCoin", group: "DivinityCoin", hint: "playtimetcg" },
   { key: "DIVINITYCOIN_WEBHOOK_SECRET", label: "DivinityCoin webhook signing secret", group: "DivinityCoin", secret: true, hint: "HMAC-SHA256 secret DivinityCoin uses to sign webhook deliveries" },

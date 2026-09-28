@@ -53,7 +53,7 @@ export interface SubscriptionCheckoutInput {
 }
 
 async function config() {
-  const s = await getSettings(["DIVINITYCOIN_API_URL", "DIVINITYCOIN_API_KEY", "DIVINITYCOIN_WEBHOOK_SECRET", "DIVINITYCOIN_PARTNER_SLUG", "DIVINITYCOIN_CHECKOUT_PATH", "DIVINITYCOIN_INTERNAL_PATH", "DIVINITYCOIN_TEST_MODE", "DIVINITYCOIN_ALLOW_CREDITS", "SITE_URL"]);
+  const s = await getSettings(["DIVINITYCOIN_API_URL", "DIVINITYCOIN_API_KEY", "DIVINITYCOIN_WEBHOOK_SECRET", "DIVINITYCOIN_PARTNER_SLUG", "DIVINITYCOIN_CHECKOUT_PATH", "DIVINITYCOIN_INTERNAL_PATH", "DIVINITYCOIN_AUTH_HEADER", "DIVINITYCOIN_TEST_MODE", "DIVINITYCOIN_ALLOW_CREDITS", "SITE_URL"]);
   return {
     baseUrl: (s.DIVINITYCOIN_API_URL || "https://divinitycoin.com").replace(/\/$/, ""),
     apiKey: s.DIVINITYCOIN_API_KEY,
@@ -63,6 +63,9 @@ async function config() {
     /* On the public domain the internal API is mounted under /api/internal;
        on the VPN service it is at the root (/internal). */
     internalPath: (s.DIVINITYCOIN_INTERNAL_PATH || "/api/internal").replace(/\/$/, ""),
+    /* DivinityCoin's public partner API authenticates with X-API-Key; the VPN
+       internal service uses X-Internal-Key. */
+    authHeader: s.DIVINITYCOIN_AUTH_HEADER || "X-API-Key",
     testMode: flag(s.DIVINITYCOIN_TEST_MODE),
     allowCredits: flag(s.DIVINITYCOIN_ALLOW_CREDITS, true),
     webhookUrl: `${(s.SITE_URL || "https://playtimetcg.com").replace(/\/$/, "")}/api/webhooks/divinitycoin`,
@@ -86,7 +89,7 @@ class DivinityCoinClient {
       method,
       headers: {
         "Content-Type": "application/json",
-        "X-Internal-Key": c.apiKey,
+        [c.authHeader]: c.apiKey,
         "X-Partner": c.partner,
       },
       body: method === "GET" ? undefined : JSON.stringify(body),
@@ -132,7 +135,7 @@ class DivinityCoinClient {
       const c = await config();
       if (!c.apiKey) return { ok: false, detail: "API key not set" };
       const url = `${c.baseUrl}${c.internalPath}/health`;
-      const res = await fetch(url, { headers: { "X-Internal-Key": c.apiKey, "X-Partner": c.partner }, signal: AbortSignal.timeout(5000) });
+      const res = await fetch(url, { headers: { [c.authHeader]: c.apiKey, "X-Partner": c.partner }, signal: AbortSignal.timeout(5000) });
       const body = (await res.text().catch(() => "")).replace(/\s+/g, " ").trim().slice(0, 300);
       const server = res.headers.get("server") || "unknown";
       const ctype = res.headers.get("content-type") || "";
