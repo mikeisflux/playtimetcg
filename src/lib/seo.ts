@@ -73,7 +73,7 @@ export async function buildMetadata(path: string, d: SeoDefaults): Promise<Metad
       title: ogTitle,
       description: ogDescription,
       url: canonical,
-      images: [{ url: image, width: 1200, height: 630, alt: `${name} — the card game for couples` }],
+      images: [{ url: image, width: 3600, height: 1890, alt: `${name} — the card game for couples` }],
     },
     twitter: {
       card: "summary_large_image",

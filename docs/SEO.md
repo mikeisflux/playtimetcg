@@ -100,11 +100,22 @@ they render (static routes only) when the database is unreachable.
 
 ## Regenerating the images
 
-`public/og.png` and the icons were drawn with `@napi-rs/canvas` (dark
-`#0d0b10`, bold uppercase wordmark, the seven-color heat ramp, no photography).
-To redraw them, rerun the generator with a bold sans font on the path (the
-original script is in the session notes; any 1200×630 PNG works for `og.png`,
-and Admin → Settings `SEO_OG_IMAGE` can point at a different file).
+`public/og.png` is rendered by `scripts/render-og.mjs` at 3600 × 1890 px —
+the 1200 × 630 social frame at 300 dpi, with a 300 dpi pHYs chunk — so it
+stays sharp when Facebook, X or LinkedIn re-sample it. Fonts (Archivo Black,
+JetBrains Mono) are bundled in `design/og/fonts`, so it renders the same
+anywhere with no network:
+
+```
+node scripts/render-og.mjs                      # wordmark + heat ramp (the default og.png)
+node scripts/render-og.mjs --photo hero.jpg     # wordmark left, photo right, ramp + tagline under
+node scripts/render-og.mjs --out other.png      # write somewhere else
+```
+
+The `--photo` layout is the campaign-cover composition; give it the full-size
+still (not a screenshot) and upload the result wherever the cover is hosted.
+Admin → Settings `SEO_OG_IMAGE` can point at a different file. The icons were
+drawn with `@napi-rs/canvas` in the same style.
 
 ## For the owner
 

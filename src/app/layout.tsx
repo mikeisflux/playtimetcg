@@ -29,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
       ],
       apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
     },
-    openGraph: { type: "website", locale: "en_US", siteName: name, images: [{ url: image, width: 1200, height: 630, alt: `${name} — the card game for couples` }] },
+    openGraph: { type: "website", locale: "en_US", siteName: name, images: [{ url: image, width: 3600, height: 1890, alt: `${name} — the card game for couples` }] },
     twitter: { card: "summary_large_image", images: [image] },
     robots: { index: true, follow: true },
     other: { rating: "adult" },
