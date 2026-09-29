@@ -117,6 +117,7 @@ export default async function PlayPage() {
   const rooms: RoomSummary[] = rows.map((r) => ({
     code: r.code, status: r.status, createdAt: r.createdAt.toISOString(),
     partner: r.hostId === user.id ? r.guest?.name ?? null : r.host.name,
+    isHost: r.hostId === user.id,
   }));
 
   return (

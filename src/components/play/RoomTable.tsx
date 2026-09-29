@@ -234,16 +234,25 @@ function BackPreview({ category, onFlip }: { category: string; onFlip?: () => vo
 }
 
 /* The drawn card: mounts back-up and turns over to its face, for both
-   players at the same moment. */
+   players at the same moment. Two-step 2D turn (back squeezes to a line,
+   face grows out of it) so only one face is ever in the DOM — no 3D
+   backface tricks, which some browsers get wrong and show mirrored. */
 function FlipCard({ card, category }: { card: CardData; category: string }) {
   const art = useBackArt(category);
-  const [flipped, setFlipped] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setFlipped(true), 60); return () => clearTimeout(t); }, []);
+  const [stage, setStage] = useState<"back" | "squeeze" | "grow" | "front">("back");
+  useEffect(() => {
+    const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) { setStage("front"); return; }
+    const t1 = setTimeout(() => setStage("squeeze"), 80);
+    const t2 = setTimeout(() => setStage("grow"), 80 + 320);
+    const t3 = setTimeout(() => setStage("front"), 80 + 340);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
+  const showBack = stage === "back" || stage === "squeeze";
   return (
     <div className="flipcard">
-      <div className={`flipcard__in${flipped ? " is-flipped" : ""}`}>
-        <div className="flipcard__front"><GameCard card={card} /></div>
-        <div className="flipcard__back"><CardBack category={category} art={art ?? null} /></div>
+      <div className={`flipcard__face${stage === "squeeze" || stage === "grow" ? " is-edge" : ""}`}>
+        {showBack ? <CardBack category={category} art={art ?? null} /> : <GameCard card={card} />}
       </div>
     </div>
   );

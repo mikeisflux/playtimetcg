@@ -11,7 +11,7 @@ export interface PackItem {
   id: string; setName: string; setSlug: string; accent: string; size: number; qty: number; productName: string | null;
 }
 
-export interface RoomSummary { code: string; status: string; createdAt: string; partner: string | null }
+export interface RoomSummary { code: string; status: string; createdAt: string; partner: string | null; isHost: boolean }
 
 export interface RoomResponse { version: number; state: GameState; status: string }
 

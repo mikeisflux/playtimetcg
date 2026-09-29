@@ -124,3 +124,16 @@ export async function POST(req: Request, { params }: Params) {
   }
   return fail("The room changed while you were acting. Try again.", 409);
 }
+
+/* DELETE: the host removes a room they created. Ends the night for both if
+   it was in progress (the partner sees it vanish on their next poll). */
+export async function DELETE(_req: Request, { params }: Params) {
+  const auth = await requireUser();
+  if (auth.res) return auth.res;
+  const { code } = await params;
+  const room = await prisma.gameRoom.findUnique({ where: { code: code.toUpperCase() } });
+  if (!room) return fail("No room with that code.", 404);
+  if (room.hostId !== auth.user.id) return fail("Only the person who opened the room can delete it.", 403);
+  await prisma.gameRoom.delete({ where: { id: room.id } });
+  return json({ ok: true });
+}
