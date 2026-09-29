@@ -1,8 +1,10 @@
-/* ── The arena: online play (/play/*) ─────────────────────────────────
-   Light is the one exception to "no shadows": inside the arena, glows,
-   halos and flares are allowed as LIGHT (never as depth). Still zero
-   radius, still flush left. Every animation runs on transform/opacity/
-   filter and everything respects prefers-reduced-motion. */
+/* ── Light: the whole public site is the arena ─────────────────────────
+   Light is the one exception to "no shadows": glows, halos and flares are
+   allowed as LIGHT (never as depth). Still zero radius, still flush left.
+   Every animation runs on transform/opacity/filter and everything respects
+   prefers-reduced-motion. The stage (aurora, floor, scanlines) sits fixed
+   behind every page; --arena-tint recolors it (the live category in a
+   room, the last roll on the home page). */
 
 .arena { position: relative; isolation: isolate; z-index: 0; --tint: var(--arena-tint, #FF5C8A); }
 .arena__in { position: relative; z-index: 1; }
@@ -28,6 +30,32 @@
 .fxflash { position: fixed; inset: 0; z-index: 31; pointer-events: none; opacity: 0; background: var(--fc, #fff); mix-blend-mode: screen; }
 .fxflash.is-on { animation: fxflash 520ms ease-out forwards; }
 @keyframes fxflash { 0% { opacity: var(--fs, 0.5); } 100% { opacity: 0; } }
+
+/* ── Site-wide light ── */
+.arena .surface { background: color-mix(in srgb, var(--surface) 72%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border-color: color-mix(in srgb, var(--rule) 70%, var(--tint) 30%); }
+.arena .hdr { border-bottom-color: color-mix(in srgb, var(--rule) 55%, var(--tint) 45%); box-shadow: 0 2px 30px -12px var(--tint); }
+.arena .hdr .wordmark, .arena .ftr .wordmark { text-shadow: 0 0 18px rgba(255,255,255,0.35); }
+.arena .hdr nav a[aria-current="page"] { text-shadow: 0 0 12px rgba(255,255,255,0.6); }
+.arena .ramp { box-shadow: 0 0 22px -2px var(--heat-5); }
+.arena .t-hero, .arena .t-h2s { text-shadow: 0 0 30px rgba(255,255,255,0.12); }
+.arena .hl, .arena .price { text-shadow: 0 0 20px color-mix(in srgb, var(--highlight) 60%, transparent), 0 0 48px color-mix(in srgb, var(--highlight) 25%, transparent); }
+.arena .eyebrow { text-shadow: 0 0 14px color-mix(in srgb, currentColor 45%, transparent); }
+.arena .step__n { text-shadow: 0 0 22px color-mix(in srgb, currentColor 65%, transparent); }
+.arena .prod, .arena .pack { position: relative; background: color-mix(in srgb, var(--ink) 78%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: border-color 220ms, box-shadow 260ms, transform 260ms; }
+.arena .prod:hover, .arena .pack:hover { border-color: color-mix(in srgb, var(--tint) 60%, var(--rule)); box-shadow: 0 0 40px -10px var(--tint); transform: translateY(-3px); }
+.arena .prod--featured { box-shadow: 0 0 34px -10px var(--highlight); }
+.arena .prod--featured:hover { box-shadow: 0 0 54px -8px var(--highlight); }
+.arena .pack__band, .arena .packrow__band { box-shadow: 0 0 18px -2px currentColor; }
+.arena .prod::before, .arena .pack::before { content: ""; position: absolute; inset: -2px; padding: 2px; pointer-events: none; opacity: 0; transition: opacity 300ms;
+  background: conic-gradient(from var(--sweep, 0deg), transparent 0 70%, var(--tint) 85%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; }
+.arena .prod:hover::before, .arena .pack:hover::before { opacity: 1; animation: sweep 2.8s linear infinite; }
+.arena .drawer { background: color-mix(in srgb, var(--surface) 90%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: -10px 0 60px -30px var(--tint); }
+.arena .announce { box-shadow: 0 0 30px -6px var(--highlight); }
+.arena .tabs { border-bottom-color: color-mix(in srgb, var(--rule) 60%, var(--tint) 40%); }
+.arena .ftr { border-top-color: color-mix(in srgb, var(--rule) 60%, var(--tint) 40%); background: color-mix(in srgb, var(--ink) 55%, transparent); }
+.arena .legend__row.on .legend__sw { box-shadow: 0 0 14px 1px currentColor; }
+.arena .stepper button:hover, .arena .iconbtn:hover { box-shadow: 0 0 16px -4px #fff; }
 
 /* ── Light utilities ── */
 .arena .panel { background: color-mix(in srgb, var(--ink) 78%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-color: color-mix(in srgb, var(--rule-strong) 70%, var(--tint) 30%); position: relative; }

@@ -1,4 +1,7 @@
+import "@/app/light.css";
 import { cookies } from "next/headers";
+import Stage from "@/components/play/fx/Stage";
+import FxLayer from "@/components/play/fx/FxLayer";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
@@ -22,7 +25,10 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   const maintenance = flag(s.MAINTENANCE_MODE) && !user?.isAdmin;
 
   return (
-    <>
+    <div className="arena">
+      <Stage />
+      <FxLayer />
+      <div className="arena__in">
       <RampStrip h={4} />
       {s.STORE_ANNOUNCEMENT && <div className="announce">{s.STORE_ANNOUNCEMENT}</div>}
       <Header user={user ? { name: user.name, isAdmin: user.isAdmin } : null} />
@@ -36,6 +42,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         <main>{children}</main>
       )}
       <Footer />
+      </div>
       <CartDrawer discreet={flag(s.DISCREET_PACKAGING)} />
       <AgeGate initiallyOpen={!ageOk} leaveUrl={s.AGE_GATE_LEAVE_URL || "https://www.google.com"} />
       {showIntro && <IntroVideo src={s.INTRO_VIDEO_URL} poster={s.INTRO_VIDEO_POSTER} initiallyOpen />}
@@ -48,6 +55,6 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       {s.META_PIXEL_ID && ageOk && (
         <script dangerouslySetInnerHTML={{ __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',${JSON.stringify(s.META_PIXEL_ID)});fbq('track','PageView');` }} />
       )}
-    </>
+    </div>
   );
 }

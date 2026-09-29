@@ -12,7 +12,7 @@ export default function SoloDie({ compact }: { compact?: boolean }) {
   const [rolled, setRolled] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const box = useRef<HTMLDivElement>(null);
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); document.documentElement.style.removeProperty("--arena-tint"); }, []);
 
   function roll() {
     if (rolling) return;
@@ -25,6 +25,7 @@ export default function SoloDie({ compact }: { compact?: boolean }) {
   }
   function landed(v: number) {
     const c = categoryForRoll(v).color;
+    document.documentElement.style.setProperty("--arena-tint", c);
     setRolled(true);
     fx({ kind: "burst", color: c, count: 90, ...centerOf(box.current) });
     fx({ kind: "flash", color: c, strength: 0.35 });
