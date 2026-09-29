@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { GameState, PlayerState } from "@/lib/game";
+import type { CardData } from "@/lib/content";
 import { categoryForRoll, DIE, backArtUrl } from "@/lib/content";
 import { DieFace, GameCard, CardBack } from "@/components/ui";
 import type { Act } from "./Room";
@@ -155,26 +156,30 @@ export default function RoomTable({ state, me, roller, catColor, act }: {
           </div>
         ) : (
           <div className="stack gap-20">
-            <DeckFan deck={state.deck} category={state.category} />
-            {state.category && <BackPreview category={state.category} />}
-            {isRoller ? (
-              <div className="stack gap-12">
-                <div className="row">
-                  <button className="btn" onClick={() => void act({ type: "draw" })}>Take the first {state.category} back</button>
-                  <button className="btn btn--text" onClick={() => void act({ type: "reroll" })}>Roll again</button>
+            <DeckFan deck={state.deck} category={state.category} onPick={isRoller ? () => void act({ type: "draw" }) : undefined} />
+            <div className="grid g-380" style={{ gap: 32, alignItems: "start" }}>
+              {state.category && <BackPreview category={state.category} onFlip={isRoller ? () => void act({ type: "draw" }) : undefined} />}
+              {isRoller ? (
+                <div className="stack gap-12">
+                  <div className="eyebrow" style={{ color: catColor ?? undefined }}>Your card</div>
+                  <div className="t-item">Tap the card to turn it over.</div>
+                  <p className="t-body-sm">{left} {state.category} card{left === 1 ? "" : "s"} left in the deck. The first one from the top is yours.</p>
+                  <div className="row">
+                    <button className="btn" onClick={() => void act({ type: "draw" })}>Turn it over</button>
+                    <button className="btn btn--text" onClick={() => void act({ type: "reroll" })}>Roll again</button>
+                  </div>
                 </div>
-                <div className="note">{left} {state.category} card{left === 1 ? "" : "s"} left in the deck. The first one from the top is yours.</div>
-              </div>
-            ) : (
-              <div className="note">Waiting for {roller?.name ?? "your partner"} to draw…</div>
-            )}
+              ) : (
+                <div className="note">Waiting for {roller?.name ?? "your partner"} to turn the card over…</div>
+              )}
+            </div>
           </div>
         )
       )}
 
       {(state.phase === "read" || state.phase === "answer") && current && (
         <div className="grid g-380" style={{ gap: 32, alignItems: "start" }}>
-          <GameCard card={toCardData(current)} />
+          <FlipCard key={current.code} card={toCardData(current)} category={String(current.category)} />
           {state.phase === "read" ? (
             <div className="stack gap-20">
               <div className="stack gap-12">
@@ -207,7 +212,7 @@ export default function RoomTable({ state, me, roller, catColor, act }: {
 
 /* The matched back, face down, before it's turned over: the printed back
    artwork when the server has it, else the CSS stand-in. */
-function BackPreview({ category }: { category: string }) {
+function useBackArt(category: string) {
   const [art, setArt] = useState<string | null | undefined>(undefined);
   useEffect(() => {
     let alive = true;
@@ -215,13 +220,38 @@ function BackPreview({ category }: { category: string }) {
     fetch(url, { method: "HEAD" }).then((r) => { if (alive) setArt(r.ok ? url : null); }).catch(() => { if (alive) setArt(null); });
     return () => { alive = false; };
   }, [category]);
-  if (art === undefined) return null;
-  return <CardBack small category={category} art={art} />;
+  return art;
+}
+function BackPreview({ category, onFlip }: { category: string; onFlip?: () => void }) {
+  const art = useBackArt(category);
+  const back = <CardBack category={category} art={art ?? null} />;
+  if (!onFlip) return <div className="flipcard"><div className="flipcard__in">{back}</div></div>;
+  return (
+    <button type="button" className="flipcard flipcard--tap" onClick={onFlip} aria-label={`Turn over the first ${category} card`} title="Turn it over">
+      <div className="flipcard__in">{back}</div>
+    </button>
+  );
+}
+
+/* The drawn card: mounts back-up and turns over to its face, for both
+   players at the same moment. */
+function FlipCard({ card, category }: { card: CardData; category: string }) {
+  const art = useBackArt(category);
+  const [flipped, setFlipped] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setFlipped(true), 60); return () => clearTimeout(t); }, []);
+  return (
+    <div className="flipcard">
+      <div className={`flipcard__in${flipped ? " is-flipped" : ""}`}>
+        <div className="flipcard__front"><GameCard card={card} /></div>
+        <div className="flipcard__back"><CardBack category={category} art={art ?? null} /></div>
+      </div>
+    </div>
+  );
 }
 
 /* The deck, face down: one colored back per card, top of the deck first.
    After a roll the first matching back is lifted — that's the card you take. */
-function DeckFan({ deck, category }: { deck: GameState["deck"]; category: string | null }) {
+function DeckFan({ deck, category, onPick }: { deck: GameState["deck"]; category: string | null; onPick?: () => void }) {
   const cards = Array.isArray(deck) ? deck : [];
   const pick = category ? cards.findIndex((d) => d.category === category) : -1;
   return (
@@ -230,7 +260,10 @@ function DeckFan({ deck, category }: { deck: GameState["deck"]; category: string
       <div className="deckfan" aria-label="Deck, face down">
         {cards.map((d, i) => {
           const face = DIE.find((f) => f.category === d.category);
-          return <div key={i} className={`deckfan__card${category && d.category === category ? " on" : ""}${i === pick ? " pick" : ""}`} style={{ "--c": face?.color ?? GREY } as React.CSSProperties} title={`${d.category} · roll ${face?.label ?? ""}`} />;
+          const cls = `deckfan__card${category && d.category === category ? " on" : ""}${i === pick ? " pick" : ""}`;
+          const style = { "--c": face?.color ?? GREY } as React.CSSProperties;
+          if (i === pick && onPick) return <button key={i} type="button" className={`${cls} deckfan__card--btn`} style={style} onClick={onPick} title="Turn this one over" aria-label={`Turn over the first ${d.category} card`} />;
+          return <div key={i} className={cls} style={style} title={`${d.category} · roll ${face?.label ?? ""}`} />;
         })}
       </div>
     </div>
