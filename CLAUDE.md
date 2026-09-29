@@ -7,6 +7,7 @@
 
 ## Design rules (from design/handoff/README.md — the source of truth)
 - Dark `#0d0b10`, alternate sections `#121015` with 2px `#2a272e` rules. **Zero border radius. No shadows.** Flush left, including button labels.
+- Exception, owner-requested: the game section (`/play/*`, styles in `src/app/play.css`, effects in `src/components/play/fx/`) may use glows, halos, flashes and particle light — light, never depth. Still zero radius, still flush left, and every effect must respect `prefers-reduced-motion`.
 - Archivo 500–900 display (uppercase), Space Grotesk body, JetBrains Mono labels.
 - Heat ramp order: `#3FD6C8 #5AB8F0 #A68CF5 #E86BD8 #FF5C8A #FF6A3D #FFD23F`.
 - Imagery is suggestive, not explicit, and only rendered behind the age gate (`isAgeVerified()`); card art is never published on the web.

@@ -53,6 +53,12 @@ export default function Room({ code, user, hostId, initial, version: v0 }: {
   const ceiling = Math.min(...state.players.map((p) => p.ceiling));
   const catColor = state.category ? CATEGORY_COLORS[state.category as Category] ?? "#FF5C8A" : null;
 
+  /* The whole arena takes the color of the live category. */
+  useEffect(() => {
+    document.documentElement.style.setProperty("--arena-tint", catColor ?? "#FF5C8A");
+    return () => { document.documentElement.style.removeProperty("--arena-tint"); };
+  }, [catColor]);
+
   return (
     <div className="room">
       <div className="stack gap-28">
@@ -94,10 +100,10 @@ export default function Room({ code, user, hostId, initial, version: v0 }: {
         <div className="stack" style={{ gap: 0 }}>
           <div className="label" style={{ paddingBottom: 8, borderBottom: "2px solid var(--text)" }}>Players</div>
           {state.players.map((p) => (
-            <div key={p.userId} className="player">
+            <div key={p.userId} className={`player${state.phase !== "lobby" && state.phase !== "ended" && roller?.userId === p.userId ? " is-rolling" : ""}`}>
               <div className="row" style={{ gap: 10 }}>
                 <span className="player__name">{p.name}{p.userId === user.id ? " (you)" : ""}</span>
-                {state.phase !== "lobby" && roller?.userId === p.userId && state.phase !== "ended" && <span className="tag tag--hot">rolling</span>}
+                {state.phase !== "lobby" && roller?.userId === p.userId && state.phase !== "ended" && <span className="tag tag--hot"><i className="pulse" style={{ "--c": "var(--primary)" } as React.CSSProperties} />rolling</span>}
               </div>
               {state.phase === "lobby" && <span className={`tag${p.ready ? " tag--ok" : ""}`}>{p.ready ? "ready" : "not ready"}</span>}
               {state.phase !== "lobby" && <span className="label">Ceiling {p.ceiling}</span>}
@@ -118,8 +124,8 @@ export default function Room({ code, user, hostId, initial, version: v0 }: {
         <div className="stack" style={{ gap: 8 }}>
           <div className="label">Log</div>
           <div className="playlog" aria-live="polite">
-            {state.log.slice(-8).map((l, i) => (
-              <div key={`${l.t}-${i}`}>
+            {state.log.slice(-8).map((l) => (
+              <div key={`${l.t}-${l.text}`}>
                 <span className="playlog__t">{fmtTime(l.t)}</span>
                 {l.who !== "system" && <span className="playlog__who">{l.who} </span>}
                 {l.text}

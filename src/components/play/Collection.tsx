@@ -1,8 +1,9 @@
 "use client";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { CATEGORIES, RARITIES } from "@/lib/content";
+import { CATEGORIES, RARITIES, CATEGORY_COLORS, type Category } from "@/lib/content";
 import { GameCard } from "@/components/ui";
+import HoloCard from "./fx/HoloCard";
 import { toCardData, type CollectionItem } from "./types";
 
 export default function Collection({ items, baseTotal }: { items: CollectionItem[]; baseTotal: number }) {
@@ -72,7 +73,9 @@ export default function Collection({ items, baseTotal }: { items: CollectionItem
           {filtered.map((c) => (
             <div key={c.id} className="collwrap">
               {c.qty > 1 && <span className="qtypill">×{c.qty}</span>}
-              <GameCard card={toCardData(c)} setName={c.setName} imageUrl={c.imageUrl} small />
+              <HoloCard small color={CATEGORY_COLORS[c.category as Category]} foil={c.rarity === "Rare"} halo={false}>
+                <GameCard card={toCardData(c)} setName={c.setName} imageUrl={c.imageUrl} small />
+              </HoloCard>
             </div>
           ))}
         </div>

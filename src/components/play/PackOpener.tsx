@@ -4,6 +4,9 @@ import type { OpenedCard } from "@/lib/packs";
 import { GameCard } from "@/components/ui";
 import { api } from "./api";
 import { toCardData, type PackItem } from "./types";
+import HoloCard from "./fx/HoloCard";
+import { fx, buzz, centerOf } from "./fx/fx";
+import { CATEGORY_COLORS, type Category } from "@/lib/content";
 
 type Opened = { set: { name: string; slug: string; accent: string }; cards: OpenedCard[] };
 type Stage = { kind: "list" } | { kind: "pack"; pack: PackItem; torn: boolean } | { kind: "reveal"; result: Opened };
@@ -30,10 +33,14 @@ export default function PackOpener({ initial }: { initial: PackItem[] }) {
     if (stage.kind !== "pack" || stage.torn) return;
     setStage({ kind: "pack", pack, torn: true });
     setErr(null);
+    fx({ kind: "flash", color: pack.accent, strength: 0.5 }); buzz([20, 40, 20]);
     timer.current = setTimeout(async () => {
       try {
         const result = await api<Opened>("/api/play/packs", { method: "POST", body: JSON.stringify({ packId: pack.id }) });
         setStage({ kind: "reveal", result });
+        fx({ kind: "burst", color: pack.accent, count: 160, spread: 1.3 });
+        fx({ kind: "strobe", color: pack.accent, times: 2 });
+        if (result.cards.some((c) => c.rarity === "Rare")) setTimeout(() => { fx({ kind: "burst", color: "#FFD23F", count: 120 }); fx({ kind: "flash", color: "#FFD23F", strength: 0.5 }); buzz([30, 50, 30, 50, 80]); }, result.cards.length * 260 + 400);
       } catch (e) {
         setErr(e instanceof Error ? e.message : "Couldn’t open that pack.");
         setStage({ kind: "list" });
@@ -47,7 +54,7 @@ export default function PackOpener({ initial }: { initial: PackItem[] }) {
     return (
       <div className="stack gap-28" style={{ alignItems: "center" }}>
         <div className="pack3d__hint" aria-live="polite">{torn ? "Tearing…" : "Tap the pack to tear it open"}</div>
-        <div className={`pack3d${torn ? " torn" : " pack3d--ready"}`} role="button" tabIndex={0} aria-label={`Open a ${pack.setName} pack`}
+        <div className={`pack3d${torn ? " torn" : " pack3d--ready"}`} style={{ "--pc": pack.accent } as React.CSSProperties} role="button" tabIndex={0} aria-label={`Open a ${pack.setName} pack`}
           onClick={() => tear(pack)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tear(pack); } }}>
           <div className="pack3d__wrap">
             <div className="pack3d__band" style={{ background: pack.accent }} />
@@ -76,7 +83,9 @@ export default function PackOpener({ initial }: { initial: PackItem[] }) {
         <div className="reveal">
           {result.cards.map((c, i) => (
             <div key={`${c.code}-${i}`} style={{ "--i": i } as React.CSSProperties}>
-              <GameCard card={toCardData(c)} setName={result.set.name} isNew={c.isNew} small />
+              <HoloCard small color={CATEGORY_COLORS[c.category as Category]} foil={c.rarity === "Rare"} halo={c.rarity !== "Common"}>
+                <GameCard card={toCardData(c)} setName={result.set.name} isNew={c.isNew} small />
+              </HoloCard>
             </div>
           ))}
         </div>

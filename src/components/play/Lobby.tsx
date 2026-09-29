@@ -47,7 +47,7 @@ export default function Lobby({ user, rooms: initialRooms }: { user: { id: strin
   return (
     <div className="grid g-420" style={{ gap: "clamp(32px, 4vw, 56px)", alignItems: "start" }}>
       <div className="stack gap-28">
-        <div className="panel" style={{ gap: 20 }}>
+        <div className="panel is-live" style={{ gap: 20 }}>
           <div className="stack gap-12">
             <div className="label">Host</div>
             <div className="t-item">Create a room</div>
@@ -77,12 +77,12 @@ export default function Lobby({ user, rooms: initialRooms }: { user: { id: strin
           {rooms.length === 0 ? (
             <div className="note">No open rooms. Create one above, or join your partner’s.</div>
           ) : (
-            <div className="rows rows--rule">
+            <div className="stack" style={{ gap: 10 }}>
               {rooms.map((r) => (
-                <div key={r.code} className="between" style={{ padding: "14px 0", alignItems: "center" }}>
+                <div key={r.code} className={`roomcard is-${r.status}`}>
                   <div className="row" style={{ gap: 14 }}>
-                    <span className="mono" style={{ fontSize: 18, letterSpacing: "0.2em", color: "var(--text-strong)" }}>{r.code}</span>
-                    <span className={STATUS_TAG[r.status] ?? "tag"}>{r.status}</span>
+                    <span className="roomcard__code">{r.code}</span>
+                    <span className={STATUS_TAG[r.status] ?? "tag"}>{r.status === "playing" && <i className="pulse" />}{r.status}</span>
                     <span className="note">{r.partner ? `with ${r.partner}` : "waiting for a partner"} · {new Date(r.createdAt).toLocaleDateString()}</span>
                   </div>
                   <div className="row" style={{ gap: 8, flexWrap: "nowrap" }}>
