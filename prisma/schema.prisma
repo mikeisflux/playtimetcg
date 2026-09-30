@@ -114,6 +114,8 @@ model Order {
   paymentMethod   String?   // divinitycoin_checkout | divinitycoin_credits | comp
   paymentRef      String?   // DivinityCoin payment/session id
   creditHoldId    String?   // DivinityCoin hold id (credits path)
+  customerIp      String?   // buyer's IP when checkout started (as reported; dispute evidence)
+  customerUserAgent String?
   shipping        Json?     // address snapshot
   needsShipping   Boolean   @default(true)
   trackingNumber  String?
@@ -160,6 +162,8 @@ model Subscription {
   priceCents       Int
   interval         String    @default("month")
   providerRef      String?   @unique // DivinityCoin subscription id
+  cardIp           String?   // buyer's IP when the card was saved — sent with every off-session charge
+  cardUserAgent    String?
   currentPeriodEnd DateTime?
   cancelAtPeriodEnd Boolean  @default(false)
   shipping         Json?     // for monthly_cards

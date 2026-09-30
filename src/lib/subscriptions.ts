@@ -5,7 +5,7 @@
    the in-process scheduler in src/instrumentation.ts). */
 import { prisma } from "./db";
 import { getSettings } from "./settings";
-import { divinitycoin, type DivinityWebhookEvent } from "./divinitycoin";
+import { divinitycoin, cleanOrigin, type CustomerOrigin, type DivinityWebhookEvent } from "./divinitycoin";
 import { sendTemplate } from "./sendgrid";
 import { grantStarterDeck } from "./packs";
 import { money } from "./content";
@@ -28,7 +28,7 @@ function addInterval(from: Date, interval: string): Date {
 
 /* Step 1: create the pending subscription and send the shopper to a
    setup-mode checkout to save a card. */
-export async function startSubscription(userId: string, productId: string, shipping?: ShippingInput | null, opts: { embed?: boolean } = {}): Promise<{ url: string; subscriptionId: string; sessionId: string | null }> {
+export async function startSubscription(userId: string, productId: string, shipping?: ShippingInput | null, opts: { embed?: boolean; origin?: CustomerOrigin | null } = {}): Promise<{ url: string; subscriptionId: string; sessionId: string | null }> {
   const [user, product] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
     prisma.product.findUnique({ where: { id: productId } }),
@@ -41,7 +41,7 @@ export async function startSubscription(userId: string, productId: string, shipp
     data: { userId, plan: product.subPlan, status: "pending", priceCents: product.priceCents, interval: product.subInterval || "month", shipping: shipping ? JSON.parse(JSON.stringify(shipping)) : undefined },
   });
   try {
-    const r = await setupCheckoutUrl(sub.id, user.email, user.id, product.name, opts.embed);
+    const r = await setupCheckoutUrl(sub.id, user.email, user.id, product.name, opts.embed, opts.origin);
     return { url: r.url, sessionId: r.sessionId, subscriptionId: sub.id };
   } catch (err) {
     await prisma.subscription.delete({ where: { id: sub.id } }).catch(() => {});
@@ -50,14 +50,14 @@ export async function startSubscription(userId: string, productId: string, shipp
 }
 
 /* Re-open the card setup for a still-pending subscription. */
-export async function resumeSubscriptionSetup(subId: string, userId: string, embed = false): Promise<{ url: string; sessionId: string | null }> {
+export async function resumeSubscriptionSetup(subId: string, userId: string, embed = false, origin?: CustomerOrigin | null): Promise<{ url: string; sessionId: string | null }> {
   const sub = await prisma.subscription.findFirst({ where: { id: subId, userId }, include: { user: true } });
   if (!sub || sub.status !== "pending") throw new Error("This subscription can’t be resumed.");
   const product = await prisma.product.findFirst({ where: { kind: "subscription", subPlan: sub.plan, active: true } });
-  return setupCheckoutUrl(sub.id, sub.user.email, sub.userId, product?.name ?? planLabel(sub.plan), embed);
+  return setupCheckoutUrl(sub.id, sub.user.email, sub.userId, product?.name ?? planLabel(sub.plan), embed, origin);
 }
 
-async function setupCheckoutUrl(subId: string, email: string, userId: string, productName: string, embed = false): Promise<{ url: string; sessionId: string | null }> {
+async function setupCheckoutUrl(subId: string, email: string, userId: string, productName: string, embed = false, origin?: CustomerOrigin | null): Promise<{ url: string; sessionId: string | null }> {
   const s = await getSettings(["SITE_URL", "SITE_NAME"]);
   const base = (s.SITE_URL || "https://playtimetcg.com").replace(/\/$/, "");
   const res = await divinitycoin.createSetupCheckout({
@@ -66,9 +66,12 @@ async function setupCheckoutUrl(subId: string, email: string, userId: string, pr
     returnUrl: `${base}/account/subscriptions?started=${subId}`,
     cancelUrl: `${base}/account/subscriptions?cancelled=${subId}`,
     embed,
+    origin,
   });
   if (!res.success || !res.checkoutUrl) throw new Error(res.error || "Could not start DivinityCoin checkout.");
-  await prisma.subscription.update({ where: { id: subId }, data: { providerRef: res.sessionId ? `cs:${res.sessionId}` : null } });
+  /* Remember where the card was entered: every renewal charge sends it. */
+  const o = cleanOrigin(origin);
+  await prisma.subscription.update({ where: { id: subId }, data: { providerRef: res.sessionId ? `cs:${res.sessionId}` : null, ...(o.ip ? { cardIp: o.ip, cardUserAgent: o.userAgent } : {}) } });
   return { url: res.checkoutUrl, sessionId: res.sessionId ?? null };
 }
 
@@ -127,6 +130,7 @@ export async function chargePeriod(subId: string, periodStart: Date): Promise<{ 
   const charge = await divinitycoin.chargeSavedCard({
     customerId: sub.userId, paymentMethodId: pm, amountCents: sub.priceCents, reference: ref,
     description: `${s.SITE_NAME || "Play Time"} — ${planLabel(sub.plan)}`, idempotencyKey: ref,
+    origin: { ip: sub.cardIp, userAgent: sub.cardUserAgent },
   });
   if (!charge.success) {
     await recordFailedPeriod(sub.id, sub.priceCents, periodStart, charge.error || charge.status || "charge failed");

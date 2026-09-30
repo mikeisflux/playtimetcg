@@ -70,6 +70,34 @@ Card-side calls and events (`create-checkout-session`, `refund`,
 `GET /internal?action=settlements|captures` exist for reconciliation; not used
 by the site yet.
 
+## Customer origin (fraud disputes and ban matching)
+
+Every call that creates a charge carries two optional fields DivinityCoin
+asks partners for: `customerIpAddress` and `customerUserAgent` — the buyer's
+browser, not our server. Without them a chargeback dispute has no evidence
+and a banned backer can come back under a new email.
+
+- Captured in the handler serving the browser (`requestOrigin()` in
+  `src/lib/auth.ts`: first entry of `X-Forwarded-For`, which Caddy sets, or
+  `X-Real-IP`, plus `User-Agent`) and threaded through `startCheckout`,
+  `startSubscription` and `resumeSubscriptionSetup` into
+  `create-checkout-session` (both modes).
+- Stored on the order (`customerIp`, `customerUserAgent` — shown on the
+  admin order page as "Placed from") and on the subscription (`cardIp`,
+  `cardUserAgent`, recorded when the card-saving checkout was started).
+- Renewals run on a cron with no browser present, so
+  `charge-saved-payment-method` sends the origin recorded when the card was
+  saved. When none was recorded the fields are omitted — never the server's
+  own address.
+- `cleanOrigin()` in `src/lib/divinitycoin.ts` drops anything that is not
+  3–45 chars of IPv4/IPv6, and any loopback, private or link-local address
+  (which would mean we were sending our own infrastructure). User-Agent is
+  truncated at 512 chars. A bad value never blocks a charge.
+
+Sanity check on the box: the "Placed from" value on recent orders should vary
+between buyers and look residential or mobile. If it is always the same, the
+proxy is not forwarding the client address.
+
 ## Webhook
 
 **Register this URL on the partner record:**

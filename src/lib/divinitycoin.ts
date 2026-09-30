@@ -33,6 +33,25 @@ export interface HoldResult { success: boolean; holdId?: string; error?: string;
 export interface RedeemResult { success: boolean; amount?: number; balanceAfter?: number; error?: string; message?: string }
 export interface SimpleResult { success: boolean; amount?: number; error?: string; message?: string }
 
+/* Where the buyer's browser was when it hit OUR checkout — DivinityCoin
+   records it as reported for fraud disputes and ban matching. Only the
+   handler serving the browser can see it; the value must never be our own
+   server's address (a wrong value is worse than none). */
+export interface CustomerOrigin { ip?: string | null; userAgent?: string | null }
+
+const PRIVATE_IP = /^(0\.|10\.|127\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|::1$|::$|f[cd][0-9a-f]{2}:|fe80:)/i;
+export function cleanOrigin(o?: CustomerOrigin | null): { ip: string | null; userAgent: string | null } {
+  const ip = (o?.ip ?? "").trim();
+  const ipOk = ip.length >= 3 && ip.length <= 45 && /^[0-9a-f.:]+$/i.test(ip) && !PRIVATE_IP.test(ip);
+  const ua = (o?.userAgent ?? "").trim().slice(0, 512);
+  return { ip: ipOk ? ip : null, userAgent: ua || null };
+}
+/* The two optional request-body fields DivinityCoin asks for. */
+export function originFields(o?: CustomerOrigin | null): { customerIpAddress?: string; customerUserAgent?: string } {
+  const c = cleanOrigin(o);
+  return { ...(c.ip ? { customerIpAddress: c.ip } : {}), ...(c.userAgent ? { customerUserAgent: c.userAgent } : {}) };
+}
+
 export interface CheckoutInput {
   reference: string;       // our order id → DivinityCoin pledgeId
   amountCents: number;
@@ -44,10 +63,11 @@ export interface CheckoutInput {
   cancelUrl: string;
   expiresInMinutes?: number;
   embed?: boolean;         // mounted in an iframe on our page: DivinityCoin posts "complete" instead of navigating
+  origin?: CustomerOrigin | null; // the buyer's browser (IP + User-Agent), captured by the handler serving it
 }
 export interface CheckoutResult { success: boolean; checkoutUrl?: string; sessionId?: string; expiresAt?: string; error?: string }
 
-export interface SetupInput { reference: string; email: string; customerId: string; description: string; returnUrl: string; cancelUrl: string; embed?: boolean }
+export interface SetupInput { reference: string; email: string; customerId: string; description: string; returnUrl: string; cancelUrl: string; embed?: boolean; origin?: CustomerOrigin | null }
 
 export interface CheckoutSession {
   sessionId: string; status: "pending" | "complete" | "expired" | "canceled" | "failed";
@@ -155,6 +175,7 @@ class DivinityCoinClient {
         expiresInMinutes: input.expiresInMinutes ?? 60,
         partnerLogoUrl: `${c.webhookUrl.replace(/\/api\/webhooks\/divinitycoin$/, "")}/icon-512.png`,
         ...(input.embed ? { disableAutoRedirect: true } : {}),
+        ...originFields(input.origin),
       });
       if (!d.checkoutUrl) return { success: false, error: "DivinityCoin did not return a checkout URL." };
       return { success: true, checkoutUrl: d.checkoutUrl, sessionId: d.sessionId, expiresAt: d.expiresAt };
@@ -174,6 +195,7 @@ class DivinityCoinClient {
         returnUrl: input.returnUrl, cancelUrl: input.cancelUrl, description: input.description, expiresInMinutes: 60,
         partnerLogoUrl: `${c.webhookUrl.replace(/\/api\/webhooks\/divinitycoin$/, "")}/icon-512.png`,
         ...(input.embed ? { disableAutoRedirect: true } : {}),
+        ...originFields(input.origin),
       });
       if (!d.checkoutUrl) return { success: false, error: "DivinityCoin did not return a checkout URL." };
       return { success: true, checkoutUrl: d.checkoutUrl, sessionId: d.sessionId, expiresAt: d.expiresAt };
@@ -197,7 +219,9 @@ class DivinityCoinClient {
   }
 
   /* ─── saved cards (subscriptions) ─── */
-  async chargeSavedCard(input: { customerId: string; paymentMethodId: string; amountCents: number; reference: string; description: string; idempotencyKey: string }): Promise<ChargeResult> {
+  /* Off-session charges have no browser present: pass the origin recorded
+     when the card was saved, or nothing — never the server's own address. */
+  async chargeSavedCard(input: { customerId: string; paymentMethodId: string; amountCents: number; reference: string; description: string; idempotencyKey: string; origin?: CustomerOrigin | null }): Promise<ChargeResult> {
     if ((await config()).testMode) return { success: true, status: "succeeded", paymentIntentId: `pi_test_${input.reference}` };
     try {
       const d = await this.call<{ success: boolean; status: string; paymentIntentId: string; holdId?: string }>("charge-saved-payment-method", {
@@ -205,6 +229,7 @@ class DivinityCoinClient {
         amount: Math.round(input.amountCents), currency: "usd",
         pledgeId: input.reference, projectId: DC_PROJECT_ID, description: input.description,
         idempotencyKey: input.idempotencyKey.replace(/[^A-Za-z0-9._:-]/g, "-").slice(0, 64),
+        ...originFields(input.origin),
       });
       return { success: !!d.success, status: d.status, paymentIntentId: d.paymentIntentId, holdId: d.holdId };
     } catch (err) {

@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, requestOrigin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { startCheckout } from "@/lib/orders";
 
@@ -12,6 +12,6 @@ export default async function Resume({ searchParams }: { searchParams: Promise<{
   if (!o || (o.userId !== user.id && o.email !== user.email)) notFound();
   if (!["pending", "awaiting_payment", "failed"].includes(o.status)) redirect(`/account/orders/${o.id}`);
   let url = `/account/orders/${o.id}`;
-  try { url = (await startCheckout(o.id)).url; } catch { /* fall back to the order page */ }
+  try { url = (await startCheckout(o.id, { origin: await requestOrigin() })).url; } catch { /* fall back to the order page */ }
   redirect(url);
 }

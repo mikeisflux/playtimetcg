@@ -2,7 +2,7 @@
    digital items, and process DivinityCoin webhook events. */
 import { prisma } from "./db";
 import { getSettings, flag } from "./settings";
-import { divinitycoin, type DivinityWebhookEvent } from "./divinitycoin";
+import { divinitycoin, cleanOrigin, type CustomerOrigin, type DivinityWebhookEvent } from "./divinitycoin";
 import { isSubscriptionReference, onSubscriptionSetupComplete, onSubscriptionChargeEvent } from "./subscriptions";
 import { sendTemplate } from "./sendgrid";
 import { grantPacks } from "./packs";
@@ -91,7 +91,7 @@ export async function createOrder(input: {
 /* Start a DivinityCoin hosted checkout for an order. DivinityCoin sends the
    shopper back to returnUrl with ?session_id=cs_… and fires
    checkout.completed + payment.succeeded to our webhook. */
-export async function startCheckout(orderId: string, opts: { embed?: boolean } = {}): Promise<{ url: string; sessionId: string | null }> {
+export async function startCheckout(orderId: string, opts: { embed?: boolean; origin?: CustomerOrigin | null } = {}): Promise<{ url: string; sessionId: string | null }> {
   const order = await prisma.order.findUnique({ where: { id: orderId }, include: { items: true } });
   if (!order) throw new Error("Order not found.");
   if (order.status === "paid" || order.status === "fulfilled") throw new Error("This order is already paid.");
@@ -107,9 +107,11 @@ export async function startCheckout(orderId: string, opts: { embed?: boolean } =
     returnUrl: `${base}/checkout/success?order=${order.id}`,
     cancelUrl: `${base}/checkout/cancel?order=${order.id}`,
     embed: opts.embed,
+    origin: opts.origin,
   });
   if (!res.success || !res.checkoutUrl) throw new Error(res.error || "Could not start DivinityCoin checkout.");
-  await prisma.order.update({ where: { id: order.id }, data: { status: "awaiting_payment", paymentMethod: "divinitycoin_checkout", paymentRef: res.sessionId ?? null } });
+  const origin = cleanOrigin(opts.origin);
+  await prisma.order.update({ where: { id: order.id }, data: { status: "awaiting_payment", paymentMethod: "divinitycoin_checkout", paymentRef: res.sessionId ?? null, ...(origin.ip ? { customerIp: origin.ip, customerUserAgent: origin.userAgent } : {}) } });
   return { url: res.checkoutUrl, sessionId: res.sessionId ?? null };
 }
 

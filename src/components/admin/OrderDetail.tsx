@@ -6,7 +6,7 @@ import { useJson, api, useToast, Badge, Money, DateTime, ConfirmButton, PageHead
 interface Item { id: string; name: string; unitCents: number; qty: number; choices: unknown; digitalGranted: boolean; product: { slug: string; kind: string; digital: boolean } | null }
 interface Order {
   id: string; number: number; email: string; status: string; subtotalCents: number; shippingCents: number; taxCents: number; discountCents: number; totalCents: number; currency: string;
-  paymentMethod: string | null; paymentRef: string | null; creditHoldId: string | null; shipping: Record<string, string> | null; needsShipping: boolean; trackingNumber: string | null; trackingCarrier: string | null;
+  paymentMethod: string | null; paymentRef: string | null; creditHoldId: string | null; customerIp?: string | null; customerUserAgent?: string | null; shipping: Record<string, string> | null; needsShipping: boolean; trackingNumber: string | null; trackingCarrier: string | null;
   notes: string | null; discreetPackaging: boolean; paidAt: string | null; fulfilledAt: string | null; createdAt: string; updatedAt: string; items: Item[]; user: { id: string; name: string; email: string } | null;
 }
 interface Detail { order: Order; emails: { id: string; subject: string; status: string | null; toEmail: string | null; createdAt: string; templateSlug: string | null }[]; audits: { id: string; action: string; createdAt: string; admin: { name: string }; after: unknown }[] }
@@ -68,6 +68,7 @@ export default function OrderDetail({ id }: { id: string }) {
             <dl className="admKv">
               <dt>Method</dt><dd>{o.paymentMethod || "—"}</dd>
               <dt>Reference</dt><dd className="admMono">{o.paymentRef || "—"}</dd>
+              <dt>Placed from</dt><dd className="admMono" title={o.customerUserAgent || undefined}>{o.customerIp || "—"}{o.customerUserAgent ? ` · ${o.customerUserAgent.slice(0, 60)}${o.customerUserAgent.length > 60 ? "…" : ""}` : ""}</dd>
               <dt>Credit hold</dt><dd className="admMono">{o.creditHoldId || "—"}</dd>
               <dt>Paid at</dt><dd><DateTime value={o.paidAt} /></dd>
               <dt>Customer</dt><dd>{o.user ? <Link href={`/admin/users/${o.user.id}`}>{o.user.name} ({o.user.email})</Link> : <span>{o.email} (guest)</span>}</dd>

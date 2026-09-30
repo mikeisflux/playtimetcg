@@ -124,6 +124,14 @@ export async function userAgent(): Promise<string> {
   try { return (await headers()).get("user-agent") || ""; } catch { return ""; }
 }
 
+/* The buyer's browser, as seen by the handler serving it: first entry of
+   X-Forwarded-For (Caddy sets it) or X-Real-IP, plus the User-Agent. Passed
+   to DivinityCoin on every charge so a fraud dispute has evidence. */
+export async function requestOrigin(): Promise<{ ip: string | null; userAgent: string | null }> {
+  const ip = await clientIp();
+  return { ip: ip === "0.0.0.0" ? null : ip, userAgent: (await userAgent()) || null };
+}
+
 /* Age gate: a first-party cookie with a 30-day expiry so server-rendered
    pages can read it (the prototype used localStorage). */
 export async function isAgeVerified(): Promise<boolean> {

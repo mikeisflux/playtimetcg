@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, requestOrigin } from "@/lib/auth";
 import { confirmSubscriptionSetup, resumeSubscriptionSetup } from "@/lib/subscriptions";
 
 /* Embedded DivinityCoin card setup → our page. */
@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const subscriptionId = String(body.subscriptionId || ""), sessionId = String(body.sessionId || "");
   if (!subscriptionId) return NextResponse.json({ error: "subscriptionId is required." }, { status: 400 });
   if (body.reopen) {
-    try { const r = await resumeSubscriptionSetup(subscriptionId, user.id, false); return NextResponse.json({ ok: true, url: r.url }); }
+    try { const r = await resumeSubscriptionSetup(subscriptionId, user.id, false, await requestOrigin()); return NextResponse.json({ ok: true, url: r.url }); }
     catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : "Could not reopen checkout." }, { status: 400 }); }
   }
   if (!sessionId) return NextResponse.json({ error: "sessionId is required." }, { status: 400 });

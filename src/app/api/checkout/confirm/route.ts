@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, requestOrigin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { confirmCheckoutSession, startCheckout } from "@/lib/orders";
 
@@ -15,9 +15,7 @@ export async function POST(req: Request) {
   if (order.paymentRef && order.paymentRef.startsWith("cs_") && order.paymentRef !== sessionId) return NextResponse.json({ error: "Session mismatch." }, { status: 400 });
   if (body.reopen) {
     /* fallback when the frame can't load: a fresh top-level session that navigates back to us on its own */
-    const user = await getSessionUser();
-    void user;
-    try { const r = await startCheckout(orderId, { embed: false }); return NextResponse.json({ ok: true, url: r.url }); }
+    try { const r = await startCheckout(orderId, { embed: false, origin: await requestOrigin() }); return NextResponse.json({ ok: true, url: r.url }); }
     catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : "Could not reopen checkout." }, { status: 400 }); }
   }
   try {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, requestOrigin } from "@/lib/auth";
 import { createOrder, startCheckout, type ShippingInput } from "@/lib/orders";
 import { prisma } from "@/lib/db";
 
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       const existing = await prisma.address.findFirst({ where: { userId: user.id, line1: shipping.line1, postal: shipping.postal } });
       if (!existing) await prisma.address.create({ data: { userId: user.id, ...shipping, line2: shipping.line2 ?? null, phone: shipping.phone ?? null, isDefault: true } });
     }
-    const { url, sessionId } = await startCheckout(order.id, { embed: body.embed !== false });
+    const { url, sessionId } = await startCheckout(order.id, { embed: body.embed !== false, origin: await requestOrigin() });
     return NextResponse.json({ ok: true, url, orderId: order.id, sessionId, embed: body.embed !== false && !!sessionId });
   } catch (err) {
     console.error(err);

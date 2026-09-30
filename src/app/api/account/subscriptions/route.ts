@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, requestOrigin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendTemplate } from "@/lib/sendgrid";
 import { cancelSubscription, resumeSubscriptionSetup } from "@/lib/subscriptions";
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
     if (action === "resume" && sub.status === "pending") {
-      try { const r = await resumeSubscriptionSetup(sub.id, user.id, false); return NextResponse.json({ ok: true, url: r.url }); }
+      try { const r = await resumeSubscriptionSetup(sub.id, user.id, false, await requestOrigin()); return NextResponse.json({ ok: true, url: r.url }); }
       catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : "Could not start checkout." }, { status: 502 }); }
     }
     return NextResponse.json({ error: "Unknown action." }, { status: 400 });
