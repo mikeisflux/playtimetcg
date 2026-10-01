@@ -65,7 +65,7 @@
 .arena .panel:hover::before, .arena .panel.is-live::before { opacity: 1; animation: sweep 2.8s linear infinite; }
 @property --sweep { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
 @keyframes sweep { to { --sweep: 360deg; } }
-.arena .btn { position: relative; transition: background var(--t), color var(--t), box-shadow 220ms, transform 160ms; }
+.arena .btn { transition: background var(--t), color var(--t), box-shadow 220ms, transform 160ms; }
 .arena .btn:not(:disabled):hover { box-shadow: 0 0 0 1px var(--highlight), 0 0 28px -4px var(--highlight); transform: translateY(-1px); }
 .arena .btn--light:not(:disabled):hover, .arena .btn--outline:not(:disabled):hover { box-shadow: 0 0 0 1px #fff, 0 0 28px -4px #fff; }
 .arena .btn--stop:not(:disabled):hover { box-shadow: 0 0 0 1px var(--heat-6), 0 0 30px -4px var(--heat-6); }
